@@ -1,5 +1,6 @@
 from agent import MahjongGBAgent
 
+import copy
 import random
 from collections import defaultdict
 
@@ -26,6 +27,44 @@ class MahjongGBEnv():
         self.normalizeReward = config.get('reward_norm', False)
         self.observation_space = self.agentclz.observation_space
         self.action_space = self.agentclz.action_space
+
+    def fast_clone(self):
+        clone = self.__class__.__new__(self.__class__)
+        clone.agentclz = self.agentclz
+        clone.duplicate = self.duplicate
+        clone.variety = self.variety
+        clone.r = self.r
+        clone.normalizeReward = self.normalizeReward
+        clone.observation_space = self.observation_space
+        clone.action_space = self.action_space
+
+        clone.reward = None if self.reward is None else list(self.reward)
+        clone.done = self.done
+        clone.prevalentWind = self.prevalentWind
+        clone.originalTileWall = self.originalTileWall
+
+        if self.tileWall and isinstance(self.tileWall[0], list):
+            clone.tileWall = [list(sub) for sub in self.tileWall]
+        else:
+            clone.tileWall = list(self.tileWall)
+
+        clone.shownTiles = defaultdict(int)
+        clone.shownTiles.update(self.shownTiles)
+
+        clone.hands = [list(hand) for hand in self.hands]
+        clone.packs = [list(packs) for packs in self.packs]
+
+        clone.curPlayer = self.curPlayer
+        clone.drawAboutKong = self.drawAboutKong
+        clone.isAboutKong = self.isAboutKong
+        clone.state = self.state
+        clone.curTile = self.curTile
+        clone.myWallLast = self.myWallLast
+        clone.wallLast = self.wallLast
+
+        clone.agents = [copy.deepcopy(agent) for agent in self.agents]
+        clone.obs = copy.deepcopy(self.obs)
+        return clone
     
     def reset(self, prevalentWind = -1, tileWall = ''):
         # Create agents to process features

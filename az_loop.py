@@ -114,6 +114,12 @@ def default_config() -> Dict[str, Any]:
             "temperature_drop_iter": 10,
             "save_every": 4096,
             "log_interval": 1,
+            "progress_interval_sec": 60,
+            "worker_progress_interval_sec": 30,
+            "top_k": 12,
+            "min_actions": 6,
+            "policy_mass": 0.95,
+            "leaf_batch_size": 16,
             "timeout_sec": 3600 * 6,
             "retries": 1,
             "wandb": False,
@@ -128,6 +134,7 @@ def default_config() -> Dict[str, Any]:
             "lr": 1e-4,
             "value_weight": 1.0,
             "policy_weight": 1.0,
+            "reward_scale": 100.0,
             "num_workers": max(1, cpu // 2),
             "prefetch_factor": 2,
             "steps_per_epoch": None,
@@ -223,16 +230,21 @@ def run_command(
         start = time.time()
         with open(log_path, "a", encoding="utf-8") as f:
             f.write("[%s] CMD: %s\n" % (_now(), " ".join(cmd)))
+            f.flush()
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
+                env=env,
             )
             assert proc.stdout is not None
             for line in proc.stdout:
                 f.write(line)
+                f.flush()
                 print(line, end="")
                 if timeout_sec > 0 and time.time() - start > timeout_sec:
                     proc.kill()
@@ -262,6 +274,37 @@ def count_npz_samples(dir_path: str) -> int:
     return total
 
 
+def count_npz_files(dir_path: str) -> Tuple[int, float]:
+    total_files = 0
+    total_bytes = 0
+    for root, _, files in os.walk(dir_path):
+        for name in files:
+            if name.endswith(".npz"):
+                total_files += 1
+                try:
+                    total_bytes += os.path.getsize(os.path.join(root, name))
+                except OSError:
+                    pass
+    return total_files, total_bytes / (1024 * 1024)
+
+
+def read_worker_progress(paths: Dict[str, str], iter_id: int, workers: int) -> Tuple[int, int]:
+    total = 0
+    done = 0
+    for worker_id in range(workers):
+        progress_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.progress" % (iter_id, worker_id))
+        if not os.path.exists(progress_path):
+            continue
+        try:
+            with open(progress_path, "r", encoding="utf-8") as f:
+                val = int(f.read().strip() or 0)
+            total += val
+            done += 1
+        except Exception:
+            continue
+    return total, done
+
+
 def ensure_clean_dir(path: str) -> None:
     if os.path.exists(path):
         shutil.rmtree(path)
@@ -288,6 +331,7 @@ def spawn_self_play(
     def worker_cmd(worker_id: int, ep: int) -> Tuple[List[str], str]:
         out_dir = os.path.join(iter_dir, "worker_%d" % worker_id)
         os.makedirs(out_dir, exist_ok=True)
+        progress_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.progress" % (iter_id, worker_id))
         cmd = [
             sys.executable,
             "mcts_self_play.py",
@@ -305,12 +349,24 @@ def spawn_self_play(
             str(sp_cfg["reward_scale"]),
             "--temperature",
             str(sp_cfg["temperature"]),
+            "--top_k",
+            str(sp_cfg.get("top_k", 0)),
+            "--min_actions",
+            str(sp_cfg.get("min_actions", 6)),
+            "--policy_mass",
+            str(sp_cfg.get("policy_mass", 0.95)),
+            "--leaf_batch_size",
+            str(sp_cfg.get("leaf_batch_size", 16)),
             "--out_dir",
             out_dir,
             "--save_every",
             str(sp_cfg["save_every"]),
             "--log_interval",
             str(sp_cfg["log_interval"]),
+            "--progress_path",
+            progress_path,
+            "--progress_interval_sec",
+            str(sp_cfg.get("worker_progress_interval_sec", 30)),
             "--seed",
             str(cfg["seed"] + iter_id * 1000 + worker_id),
         ]
@@ -340,8 +396,33 @@ def spawn_self_play(
                     "self_play",
                 )
             )
-        for fut in as_completed(futures):
-            fut.result()
+        pending = list(futures)
+        interval = int(sp_cfg.get("progress_interval_sec", 60))
+        next_report = time.time() + max(interval, 1)
+        start = time.time()
+        while pending:
+            done = [f for f in pending if f.done()]
+            for f in done:
+                f.result()
+                pending.remove(f)
+            now = time.time()
+            if interval > 0 and now >= next_report:
+                npz_files, npz_mb = count_npz_files(iter_dir)
+                completed, prog_workers = read_worker_progress(paths, iter_id, workers)
+                log(
+                    "self-play progress: done=%d/%d episodes=%d/%d npz=%d size=%.1fMB elapsed=%.1fs"
+                    % (
+                        workers - len(pending),
+                        workers,
+                        completed,
+                        episodes,
+                        npz_files,
+                        npz_mb,
+                        now - start,
+                    )
+                )
+                next_report = now + interval
+            time.sleep(1)
 
     total_samples = count_npz_samples(iter_dir)
     log("self-play done: iter=%d total_samples=%d data_dir=%s" % (iter_id, total_samples, iter_dir))
@@ -392,6 +473,8 @@ def train_candidate(
         str(tr_cfg["value_weight"]),
         "--policy_weight",
         str(tr_cfg["policy_weight"]),
+        "--reward_scale",
+        str(tr_cfg["reward_scale"]),
         "--save_path",
         candidate_path,
         "--num_workers",

@@ -34,3 +34,8 @@ Notes
 - self-play data is stored in data/iter_xxxx
 - training mixes the most recent data_window iterations
 - arena uses score mean + confidence interval by default
+- train uses reward_scale (default 100.0); if your self-play data is already scaled, set train.reward_scale=1
+- self-play prints periodic progress (npz count and size) via self_play.progress_interval_sec
+- per-worker progress is aggregated via self_play.worker_progress_interval_sec
+- self-play supports pruning via top_k/min_actions/policy_mass to speed up MCTS
+- self-play supports batched leaf eval via self_play.leaf_batch_size

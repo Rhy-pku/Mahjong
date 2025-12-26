@@ -109,6 +109,42 @@ def _apply_action_mask(logits, mask):
     return logits + inf_mask
 
 
+def _get_hu_action(mask):
+    if mask.shape[0] == 0:
+        return None
+    if mask.shape[0] > 1 and mask[1] > 0:
+        return 1
+    return None
+
+
+def _candidate_actions(prior, valid, n_visits, top_k, min_actions, policy_mass):
+    if valid is None or len(valid) == 0:
+        return valid
+    pri = prior[valid]
+    order = valid[np.argsort(-pri)]
+    k_mass = len(order)
+    if 0.0 < policy_mass < 1.0:
+        cum = np.cumsum(pri[np.argsort(-pri)])
+        k_mass = int(np.searchsorted(cum, policy_mass) + 1)
+    k_mass = max(k_mass, min_actions)
+    if top_k and top_k > 0:
+        k_pw = max(min_actions, int(2 + math.sqrt(max(n_visits, 1))))
+        k_pw = min(k_pw, top_k)
+        k_keep = min(k_mass, k_pw)
+    else:
+        k_keep = k_mass
+    k_keep = min(k_keep, len(order))
+    return order[:k_keep]
+
+
+def _safe_env_step(env, action_dict):
+    try:
+        obs, rewards, done = env.step(action_dict)
+        return obs, rewards, done, False
+    except Exception:
+        return {}, None, True, True
+
+
 def load_state_dict_compat(ckpt_path):
     sd = torch.load(ckpt_path, map_location="cpu")
     if isinstance(sd, dict) and "model" in sd and isinstance(sd["model"], dict):
@@ -156,8 +192,8 @@ def policy_actions(model, device, env, obs_dict, in_channels):
         batch_masks.append(obs["action_mask"])
 
     if batch_obs:
-        obs_t = torch.tensor(np.stack(batch_obs), dtype=torch.float32, device=device)
-        mask_t = torch.tensor(np.stack(batch_masks), dtype=torch.float32, device=device)
+        obs_t = _to_device(np.stack(batch_obs), device)
+        mask_t = _to_device(np.stack(batch_masks), device)
         with torch.inference_mode():
             logits, _ = model(obs_t)
         masked_logits = _apply_action_mask(logits, mask_t)
@@ -169,8 +205,8 @@ def policy_actions(model, device, env, obs_dict, in_channels):
 
 def policy_value(model, device, env, player, obs, in_channels, value_dim):
     oracle_obs = build_oracle_obs(env, player, obs["observation"], in_channels)
-    obs_t = torch.tensor(oracle_obs[None, ...], dtype=torch.float32, device=device)
-    mask_t = torch.tensor(obs["action_mask"][None, ...], dtype=torch.float32, device=device)
+    obs_t = _to_device(oracle_obs[None, ...], device)
+    mask_t = _to_device(obs["action_mask"][None, ...], device)
     with torch.inference_mode():
         logits, value = model(obs_t)
     masked_logits = _apply_action_mask(logits, mask_t)
@@ -201,6 +237,23 @@ def _shuffle_wall(env, rng):
         rng.shuffle(wall)
 
 
+def _clone_env(env):
+    if hasattr(env, "fast_clone"):
+        return env.fast_clone()
+    return copy.deepcopy(env)
+
+
+def _to_device(array, device):
+    if device.type == "cuda":
+        tensor = torch.as_tensor(array, dtype=torch.float32).contiguous()
+        try:
+            tensor = tensor.pin_memory()
+        except RuntimeError:
+            pass
+        return tensor.to(device, non_blocking=True)
+    return torch.as_tensor(array, dtype=torch.float32, device=device).contiguous()
+
+
 class MCTSNode:
     def __init__(self, action_size, value_dim):
         self.action_size = action_size
@@ -217,24 +270,21 @@ class MCTSNode:
         valid = np.flatnonzero(action_mask > 0)
         if valid.size == 0:
             valid = np.arange(self.action_size, dtype=np.int32)
-        probs = np.zeros_like(priors, dtype=np.float32)
-        if priors.sum() <= 1e-8:
+        probs = priors.astype(np.float32)
+        probs[action_mask <= 0] = 0.0
+        total = probs.sum()
+        if total <= 1e-8:
+            probs[:] = 0.0
             probs[valid] = 1.0 / len(valid)
         else:
-            probs = priors.astype(np.float32)
-            probs[action_mask <= 0] = 0.0
-            total = probs.sum()
-            if total <= 1e-8:
-                probs[valid] = 1.0 / len(valid)
-            else:
-                probs /= total
+            probs /= total
         self.prior = probs
         self.valid_actions = valid
         self.expanded = True
 
-    def select(self, player, c_puct):
+    def select(self, player, c_puct, top_k, min_actions, policy_mass):
         n = max(self.n_visits, 1)
-        valid = self.valid_actions
+        valid = _candidate_actions(self.prior, self.valid_actions, self.n_visits, top_k, min_actions, policy_mass)
         q = np.zeros(self.action_size, dtype=np.float32)
         nsa = self.nsa[valid].astype(np.float32)
         wsa = self.wsa[valid, player]
@@ -244,7 +294,17 @@ class MCTSNode:
         return int(valid[int(np.argmax(scores))])
 
 
-def simulate(
+def _backprop(path, root, value_vec):
+    if path:
+        for node, action in path:
+            node.n_visits += 1
+            node.nsa[action] += 1
+            node.wsa[action] += value_vec
+    else:
+        root.n_visits += 1
+
+
+def _simulate_to_leaf(
     env,
     obs_dict,
     root,
@@ -254,31 +314,34 @@ def simulate(
     value_dim,
     c_puct,
     reward_scale,
+    top_k,
+    min_actions,
+    policy_mass,
 ):
     path = []
     node = root
-    value_vec = None
     while True:
         if env.done:
             value_vec = reward_to_vec(env, None, reward_scale)
-            break
+            return "terminal", (value_vec, path)
         if len(obs_dict) != 1:
             action_dict = {name: 0 for name in env.agent_names}
             action_dict.update(policy_actions(model, device, env, obs_dict, in_channels))
-            obs_dict, rewards, done = env.step(action_dict)
+            obs_dict, rewards, done, err = _safe_env_step(env, action_dict)
             if done:
-                value_vec = reward_to_vec(env, rewards, reward_scale)
-                break
+                if err:
+                    value_vec = np.zeros(4, dtype=np.float32)
+                else:
+                    value_vec = reward_to_vec(env, rewards, reward_scale)
+                return "terminal", (value_vec, path)
             continue
 
         name, obs = next(iter(obs_dict.items()))
         player = _player_from_name(name)
         if not node.expanded:
-            priors, value_vec = policy_value(model, device, env, player, obs, in_channels, value_dim)
-            node.expand(obs["action_mask"], priors)
-            break
+            return "leaf", (node, path, player, obs, env)
 
-        action = node.select(player, c_puct)
+        action = node.select(player, c_puct, top_k, min_actions, policy_mass)
         path.append((node, action))
         child = node.children.get(action)
         if child is None:
@@ -286,23 +349,53 @@ def simulate(
             node.children[action] = child
         action_dict = {n: 0 for n in env.agent_names}
         action_dict[name] = action
-        obs_dict, rewards, done = env.step(action_dict)
+        obs_dict, rewards, done, err = _safe_env_step(env, action_dict)
         if done:
-            value_vec = reward_to_vec(env, rewards, reward_scale)
-            break
+            if err:
+                value_vec = np.zeros(4, dtype=np.float32)
+            else:
+                value_vec = reward_to_vec(env, rewards, reward_scale)
+            return "terminal", (value_vec, path)
         node = child
 
-    if value_vec is None:
-        value_vec = np.zeros(4, dtype=np.float32)
 
-    if path:
-        for n, a in path:
-            n.n_visits += 1
-            n.nsa[a] += 1
-            n.wsa[a] += value_vec
-    else:
-        root.n_visits += 1
-    return value_vec
+def _eval_leaf_batch(
+    leaf_batch,
+    root,
+    model,
+    device,
+    in_channels,
+    value_dim,
+):
+    obs_list = []
+    mask_list = []
+    players = []
+    nodes = []
+    paths = []
+    for node, path, player, obs, env in leaf_batch:
+        obs_list.append(build_oracle_obs(env, player, obs["observation"], in_channels))
+        mask_list.append(obs["action_mask"])
+        players.append(player)
+        nodes.append(node)
+        paths.append(path)
+
+    obs_t = _to_device(np.stack(obs_list), device)
+    mask_t = _to_device(np.stack(mask_list), device)
+    with torch.inference_mode():
+        logits, values = model(obs_t)
+    masked_logits = _apply_action_mask(logits, mask_t)
+    probs = torch.softmax(masked_logits, dim=1).cpu().numpy()
+    values_np = values.cpu().numpy()
+
+    for i in range(len(leaf_batch)):
+        priors = probs[i]
+        nodes[i].expand(mask_list[i], priors)
+        if value_dim == 1:
+            value_vec = np.zeros(4, dtype=np.float32)
+            value_vec[players[i]] = float(values_np[i, 0])
+        else:
+            value_vec = values_np[i].astype(np.float32)
+        _backprop(paths[i], root, value_vec)
 
 
 def mcts_action(
@@ -318,16 +411,27 @@ def mcts_action(
     determinize,
     rng,
     temperature,
+    top_k,
+    min_actions,
+    policy_mass,
+    leaf_batch_size,
 ):
     name, obs = next(iter(obs_dict.items()))
     action_size = obs["action_mask"].shape[0]
+    hu_action = _get_hu_action(obs["action_mask"])
+    if hu_action is not None:
+        pi = np.zeros(action_size, dtype=np.float32)
+        pi[hu_action] = 1.0
+        return hu_action, pi
     root = MCTSNode(action_size, value_dim)
+    leaf_batch = []
+    leaf_batch_size = max(1, int(leaf_batch_size))
     for _ in range(simulations):
-        env_copy = copy.deepcopy(env)
+        env_copy = _clone_env(env)
         if determinize:
             _shuffle_wall(env_copy, rng)
         obs_copy = env_copy._obs()
-        simulate(
+        kind, payload = _simulate_to_leaf(
             env_copy,
             obs_copy,
             root,
@@ -337,7 +441,21 @@ def mcts_action(
             value_dim,
             c_puct,
             reward_scale,
+            top_k,
+            min_actions,
+            policy_mass,
         )
+        if kind == "terminal":
+            value_vec, path = payload
+            _backprop(path, root, value_vec)
+        else:
+            leaf_batch.append(payload)
+            if len(leaf_batch) >= leaf_batch_size:
+                _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim)
+                leaf_batch = []
+
+    if leaf_batch:
+        _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim)
 
     if not root.expanded:
         player = _player_from_name(name)
@@ -398,9 +516,15 @@ def self_play(
     reward_scale,
     determinize,
     temperature,
+    top_k,
+    min_actions,
+    policy_mass,
+    leaf_batch_size,
     out_dir,
     save_every,
     log_interval,
+    progress_path=None,
+    progress_interval_sec=30,
     wandb_run=None,
     wandb_log_interval=10,
 ):
@@ -425,13 +549,26 @@ def self_play(
     file_idx = 0
     total_samples = 0
     start_time = time.time()
+    last_progress_write = start_time
 
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
     print(
-        "self-play config: episodes=%d sims=%d c_puct=%.3f determinize=%s temp=%.3f out_dir=%s"
-        % (episodes, simulations, c_puct, str(determinize), temperature, out_dir or "None")
+        "self-play config: episodes=%d sims=%d c_puct=%.3f determinize=%s temp=%.3f top_k=%s min_actions=%d "
+        "policy_mass=%.2f leaf_batch=%d out_dir=%s"
+        % (
+            episodes,
+            simulations,
+            c_puct,
+            str(determinize),
+            temperature,
+            str(top_k),
+            min_actions,
+            policy_mass,
+            leaf_batch_size,
+            out_dir or "None",
+        )
     )
     pbar = None
     if tqdm is not None:
@@ -460,6 +597,10 @@ def self_play(
                     determinize=determinize,
                     rng=rng,
                     temperature=temperature,
+                    top_k=top_k,
+                    min_actions=min_actions,
+                    policy_mass=policy_mass,
+                    leaf_batch_size=leaf_batch_size,
                 )
                 name = next(iter(obs.keys()))
                 player = _player_from_name(name)
@@ -476,7 +617,11 @@ def self_play(
             else:
                 action_dict = {n: 0 for n in agent_names}
                 action_dict.update(policy_actions(model, device, env, obs, in_channels))
-            obs, rewards, done = env.step(action_dict)
+            obs, rewards, done, err = _safe_env_step(env, action_dict)
+            if err:
+                invalid_count += 1
+                rewards = {name: -30 for name in agent_names}
+                break
 
         for name in agent_names:
             total_scores[name] += rewards.get(name, 0)
@@ -504,6 +649,16 @@ def self_play(
                     _save_batch(out_dir, file_idx, samples)
                     file_idx += 1
                     samples = []
+
+        now = time.time()
+        if progress_path and (now - last_progress_write) >= progress_interval_sec:
+            try:
+                os.makedirs(os.path.dirname(progress_path), exist_ok=True)
+                with open(progress_path, "w", encoding="utf-8") as f:
+                    f.write(str(episode_idx + 1))
+            except Exception:
+                pass
+            last_progress_write = now
 
         if log_interval and ((episode_idx + 1) % log_interval == 0):
             elapsed = time.time() - start_time
@@ -544,6 +699,13 @@ def self_play(
     win_rates = {name: win_counts[name] / episodes for name in agent_names}
     if out_dir and samples:
         _save_batch(out_dir, file_idx, samples)
+    if progress_path:
+        try:
+            os.makedirs(os.path.dirname(progress_path), exist_ok=True)
+            with open(progress_path, "w", encoding="utf-8") as f:
+                f.write(str(episodes))
+        except Exception:
+            pass
     if pbar is not None:
         pbar.close()
     return total_scores, win_rates, draw_count, invalid_count
@@ -562,9 +724,15 @@ def main():
     parser.add_argument("--reward_scale", type=float, default=1.0, help="Divide rewards by this value")
     parser.add_argument("--determinize", action="store_true", help="Shuffle wall per simulation")
     parser.add_argument("--temperature", type=float, default=0.0, help="Action temperature")
+    parser.add_argument("--top_k", type=int, default=0, help="Top-K actions to expand per node (0=disable)")
+    parser.add_argument("--min_actions", type=int, default=6, help="Minimum actions to keep after pruning")
+    parser.add_argument("--policy_mass", type=float, default=0.95, help="Policy mass threshold for pruning")
+    parser.add_argument("--leaf_batch_size", type=int, default=16, help="Leaf evaluation batch size")
     parser.add_argument("--out_dir", default="", help="Save self-play samples to this dir")
     parser.add_argument("--save_every", type=int, default=4096, help="Samples per npz")
     parser.add_argument("--log_interval", type=int, default=1, help="Print every N episodes")
+    parser.add_argument("--progress_path", default="", help="Write completed episodes to this file")
+    parser.add_argument("--progress_interval_sec", type=int, default=30, help="Progress write interval (sec)")
     parser.add_argument("--wandb", action="store_true", help="Enable Weights & Biases logging")
     parser.add_argument("--wandb_project", default="mahjong-az", help="W&B project name")
     parser.add_argument("--wandb_run_name", default="", help="W&B run name")
@@ -599,6 +767,10 @@ def main():
                 "reward_scale": args.reward_scale,
                 "determinize": args.determinize,
                 "temperature": args.temperature,
+                "top_k": args.top_k,
+                "min_actions": args.min_actions,
+                "policy_mass": args.policy_mass,
+                "leaf_batch_size": args.leaf_batch_size,
             },
         )
 
@@ -613,9 +785,15 @@ def main():
         reward_scale=args.reward_scale,
         determinize=args.determinize,
         temperature=args.temperature,
+        top_k=args.top_k,
+        min_actions=args.min_actions,
+        policy_mass=args.policy_mass,
+        leaf_batch_size=args.leaf_batch_size,
         out_dir=args.out_dir.strip() or None,
         save_every=args.save_every,
         log_interval=args.log_interval,
+        progress_path=args.progress_path.strip() or None,
+        progress_interval_sec=args.progress_interval_sec,
         wandb_run=wandb_run,
         wandb_log_interval=args.wandb_log_interval,
     )

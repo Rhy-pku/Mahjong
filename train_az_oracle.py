@@ -31,6 +31,12 @@ def _apply_action_mask(logits, mask):
     return logits + inf_mask
 
 
+def _to_tensor(arr, device, dtype):
+    if torch.is_tensor(arr):
+        return arr.to(device=device, dtype=dtype, non_blocking=True)
+    return torch.as_tensor(arr, dtype=dtype, device=device)
+
+
 class RandomBatchDataset(IterableDataset):
     def __init__(self, files, file_sizes, batch_size, seed=None):
         self.files = files
@@ -82,6 +88,7 @@ def train(
     lr,
     value_weight,
     policy_weight,
+    reward_scale,
     save_path,
     num_workers=0,
     prefetch_factor=2,
@@ -159,10 +166,12 @@ def train(
             )
         for batch in loader:
             obs_np, masks_np, pi_np, reward_np = batch
-            obs_t = torch.from_numpy(obs_np).to(device=device, dtype=torch.float32, non_blocking=True)
-            mask_t = torch.from_numpy(masks_np).to(device=device, dtype=torch.float32, non_blocking=True)
-            pi_t = torch.from_numpy(pi_np).to(device=device, dtype=torch.float32, non_blocking=True)
-            reward_t = torch.from_numpy(reward_np).to(device=device, dtype=torch.float32, non_blocking=True)
+            obs_t = _to_tensor(obs_np, device, torch.float32)
+            mask_t = _to_tensor(masks_np, device, torch.float32)
+            pi_t = _to_tensor(pi_np, device, torch.float32)
+            reward_t = _to_tensor(reward_np, device, torch.float32)
+            if reward_scale != 1.0:
+                reward_t = reward_t / reward_scale
 
             optimizer.zero_grad()
             with torch.cuda.amp.autocast(enabled=amp and device.type == "cuda"):
@@ -250,6 +259,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--value_weight", type=float, default=1.0, help="Value loss weight")
     parser.add_argument("--policy_weight", type=float, default=1.0, help="Policy loss weight")
+    parser.add_argument("--reward_scale", type=float, default=100.0, help="Divide rewards by this value")
     parser.add_argument("--save_path", required=True, help="Output checkpoint path")
     parser.add_argument("--num_workers", type=int, default=0, help="DataLoader workers")
     parser.add_argument("--prefetch_factor", type=int, default=2, help="Prefetch factor for workers")
@@ -280,12 +290,13 @@ def main():
                 "policy_weight": args.policy_weight,
                 "amp": args.amp,
                 "num_workers": args.num_workers,
+                "reward_scale": args.reward_scale,
             },
         )
 
     device = torch.device(args.device)
     print(
-        "train config: data_dir=%s device=%s epochs=%d batch=%d lr=%.6f workers=%d"
+        "train config: data_dir=%s device=%s epochs=%d batch=%d lr=%.6f workers=%d reward_scale=%.2f"
         % (
             args.data_dir,
             args.device,
@@ -293,6 +304,7 @@ def main():
             args.batch_size,
             args.lr,
             args.num_workers,
+            args.reward_scale,
         )
     )
     train(
@@ -304,6 +316,7 @@ def main():
         lr=args.lr,
         value_weight=args.value_weight,
         policy_weight=args.policy_weight,
+        reward_scale=args.reward_scale,
         save_path=args.save_path,
         num_workers=args.num_workers,
         prefetch_factor=args.prefetch_factor,
