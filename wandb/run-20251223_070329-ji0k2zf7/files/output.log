@@ -1,0 +1,57 @@
+Loading training data...
+Indexing data: 100%|██████████████████████████████████████████████████████████████████████████| 198/198 [00:00<00:00, 1431.76it/s]
+Total samples: 9919403
+Total files: 198
+Creating full model...
+Model parameters: 1,104,620 (trainable: 1,104,620)
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:343: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+
+============================================================
+Epoch 1/10
+============================================================
+Training:   0%|                                                                                         | 0/19374 [00:34<?, ?it/s]
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/queue.py", line 210, in get
+    self.not_empty.wait(remaining)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/threading.py", line 373, in wait
+    gotit = waiter.acquire(True, timeout)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+RuntimeError: DataLoader worker (pid 25442) is killed by signal: Killed.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 433, in <module>
+    main()
+    ~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 361, in main
+    train_metrics = train_epoch(
+        model,
+    ...<5 lines>...
+        use_amp=use_amp,
+    )
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 143, in train_epoch
+    for step, batch in enumerate(tqdm(dataloader, desc="Training")):
+                       ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+               ^^^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+    data = self._next_data()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+    idx, data = self._get_data()
+                ~~~~~~~~~~~~~~^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1434, in _get_data
+    success, data = self._try_get_data()
+                    ~~~~~~~~~~~~~~~~~~^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1288, in _try_get_data
+    raise RuntimeError(
+        f"DataLoader worker (pid(s) {pids_str}) exited unexpectedly"
+    ) from e
+RuntimeError: DataLoader worker (pid(s) 25442) exited unexpectedly

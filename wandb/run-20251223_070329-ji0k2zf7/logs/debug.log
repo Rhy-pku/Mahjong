@@ -1,0 +1,23 @@
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_setup.py:_flush():80] Current SDK version is 0.23.1
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_setup.py:_flush():80] Configure stats pid to 25313
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/.config/wandb/settings
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/Chinese-Standard-Mahjong/wandb/settings
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_init.py:setup_run_log_directory():714] Logging user logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251223_070329-ji0k2zf7/logs/debug.log
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_init.py:setup_run_log_directory():715] Logging internal logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251223_070329-ji0k2zf7/logs/debug-internal.log
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_init.py:init():841] calling init triggers
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_init.py:init():846] wandb.init called with sweep_config: {}
+config: {'data_dir': './pretrain_data_bc', 'val_data_dir': None, 'output_dir': './bc_checkpoints', 'model_type': 'full', 'hidden_dim': 256, 'use_vec': True, 'batch_size': 512, 'epochs': 10, 'lr': 0.001, 'weight_decay': 0.0001, 'num_workers': 4, 'prefetch_factor': 4, 'grad_accum': 1, 'no_amp': False, 'preload': False, 'compile': False, 'wandb_project': 'mahjong-pretrain', 'wandb_name': None, 'no_wandb': False, 'device': 'cuda', 'save_interval': 1, 'resume': None, '_wandb': {}}
+2025-12-23 07:03:29,172 INFO    MainThread:25313 [wandb_init.py:init():889] starting backend
+2025-12-23 07:03:29,408 INFO    MainThread:25313 [wandb_init.py:init():892] sending inform_init request
+2025-12-23 07:03:29,416 INFO    MainThread:25313 [wandb_init.py:init():900] backend started and connected
+2025-12-23 07:03:29,446 INFO    MainThread:25313 [wandb_init.py:init():970] updated telemetry
+2025-12-23 07:03:29,448 INFO    MainThread:25313 [wandb_init.py:init():994] communicating run to backend with 90.0 second timeout
+2025-12-23 07:03:30,385 INFO    MainThread:25313 [wandb_init.py:init():1041] starting run threads in backend
+2025-12-23 07:03:30,441 INFO    MainThread:25313 [wandb_run.py:_console_start():2521] atexit reg
+2025-12-23 07:03:30,441 INFO    MainThread:25313 [wandb_run.py:_redirect():2369] redirect: wrap_raw
+2025-12-23 07:03:30,441 INFO    MainThread:25313 [wandb_run.py:_redirect():2438] Wrapping output streams.
+2025-12-23 07:03:30,442 INFO    MainThread:25313 [wandb_run.py:_redirect():2461] Redirects installed.
+2025-12-23 07:03:30,445 INFO    MainThread:25313 [wandb_init.py:init():1081] run started, returning control to user process
+2025-12-23 07:04:21,378 INFO    wandb-AsyncioManager-main:25313 [service_client.py:_forward_responses():80] Reached EOF.
+2025-12-23 07:04:21,378 INFO    wandb-AsyncioManager-main:25313 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.

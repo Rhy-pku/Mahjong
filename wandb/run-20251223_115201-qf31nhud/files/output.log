@@ -1,0 +1,50 @@
+Traceback (most recent call last):
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 660, in <module>
+    main()
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 540, in main
+    optimizer = torch.optim.AdamW(model.parameters(), **optim_kwargs, fused=(device.type == "cuda"))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/optim/adamw.py", line 37, in __init__
+    super().__init__(
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/optim/adam.py", line 101, in __init__
+    super().__init__(params, defaults)
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/optim/optimizer.py", line 401, in __init__
+    self.add_param_group(cast(dict, param_group))
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/_compile.py", line 46, in inner
+    import torch._dynamo
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/_dynamo/__init__.py", line 13, in <module>
+    from . import (
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/_dynamo/aot_compile.py", line 15, in <module>
+    from . import convert_frame
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/_dynamo/convert_frame.py", line 57, in <module>
+    from torch._dynamo.symbolic_convert import TensorifyState
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/_dynamo/symbolic_convert.py", line 53, in <module>
+    from torch._dynamo.exc import ObservedException, TensorifyScalarRestartAnalysis
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/_dynamo/exc.py", line 45, in <module>
+    from .utils import counters
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/_dynamo/utils.py", line 67, in <module>
+    import torch.fx.experimental.symbolic_shapes
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/fx/experimental/symbolic_shapes.py", line 3, in <module>
+    import sympy
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/sympy/__init__.py", line 23, in <module>
+    import mpmath
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/__init__.py", line 5, in <module>
+    from .ctx_fp import FPContext
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/ctx_fp.py", line 1, in <module>
+    from .ctx_base import StandardBaseContext
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/ctx_base.py", line 3, in <module>
+    from .libmp.backend import xrange
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/libmp/__init__.py", line 1, in <module>
+    from .libmpf import (prec_to_dps, dps_to_prec, repr_dps,
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/libmp/libmpf.py", line 20, in <module>
+    from .libintmath import (giant_steps,
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/libmp/libintmath.py", line 127, in <module>
+    bctable = [bitcount(n) for n in range(1024)]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/libmp/libintmath.py", line 127, in <listcomp>
+    bctable = [bitcount(n) for n in range(1024)]
+               ^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/mpmath/libmp/libintmath.py", line 93, in python_bitcount
+    bc = bisect(powers, n)
+         ^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

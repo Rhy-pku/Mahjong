@@ -1,0 +1,48 @@
+{
+  "os":  "Linux-5.15.0-105-generic-x86_64-with-glibc2.35",
+  "python":  "CPython 3.14.2",
+  "startedAt":  "2025-12-23T07:03:29.169690Z",
+  "args":  [
+    "--data_dir",
+    "./pretrain_data_bc",
+    "--output_dir",
+    "./bc_checkpoints",
+    "--batch_size",
+    "512",
+    "--num_workers",
+    "4",
+    "--prefetch_factor",
+    "4"
+  ],
+  "program":  "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py",
+  "codePath":  "pretrain_bc.py",
+  "codePathLocal":  "pretrain_bc.py",
+  "email":  "liuminghao491@gmail.com",
+  "root":  "/home/featurize/Chinese-Standard-Mahjong",
+  "host":  "featurize",
+  "executable":  "/environment/miniconda3/envs/lab/bin/python",
+  "cpu_count":  16,
+  "cpu_count_logical":  16,
+  "gpu":  "NVIDIA GeForce RTX 4090",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "728249831424",
+      "used":  "56599306240"
+    }
+  },
+  "memory":  {
+    "total":  "58965086208"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 4090",
+      "memoryTotal":  "25757220864",
+      "cudaCores":  16384,
+      "architecture":  "Ada",
+      "uuid":  "GPU-c10a9e27-4d6a-bc2d-9169-029a8ab60d50"
+    }
+  ],
+  "cudaVersion":  "13.0",
+  "writerId":  "6sp6mlvrgw0aa7ywvu9rhs8m06rkaec9"
+}

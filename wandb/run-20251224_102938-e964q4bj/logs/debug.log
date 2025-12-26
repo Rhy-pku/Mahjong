@@ -1,0 +1,62 @@
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_setup.py:_flush():80] Current SDK version is 0.23.1
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_setup.py:_flush():80] Configure stats pid to 98637
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/.config/wandb/settings
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/Chinese-Standard-Mahjong/wandb/settings
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_init.py:setup_run_log_directory():714] Logging user logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251224_102938-e964q4bj/logs/debug.log
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_init.py:setup_run_log_directory():715] Logging internal logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251224_102938-e964q4bj/logs/debug-internal.log
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_init.py:init():841] calling init triggers
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_init.py:init():846] wandb.init called with sweep_config: {}
+config: {'data_dir': '/home/featurize/Chinese-Standard-Mahjong/pretrain_data_bc', 'val_data_dir': '/home/featurize/Chinese-Standard-Mahjong/validate_data_bc', 'output_dir': './checkpoints_stream', 'model_type': 'full', 'hidden_dim': 256, 'use_vec': True, 'file_pattern': '*.npz', 'batch_size': 8192, 'val_batch_size': None, 'num_workers': 12, 'prefetch_factor': 2, 'shuffle_files': True, 'no_shuffle_in_file': False, 'drop_last': True, 'seed': 42, 'limit_files': None, 'epochs': 20, 'lr': 0.002, 'weight_decay': 0.0001, 'grad_accum': 1, 'max_grad_norm': 1.0, 'no_amp': False, 'compile': False, 'prefetch_to_gpu': True, 'no_prefetch_to_gpu': False, 'tf32': True, 'ddp': False, 'local_rank': 0, 'save_interval': 1, 'resume': None, 'log_interval': 200, 'no_wandb': False, 'wandb_project': 'mahjong-pretrain', 'wandb_name': None, '_wandb': {}}
+2025-12-24 10:29:38,099 INFO    MainThread:98637 [wandb_init.py:init():889] starting backend
+2025-12-24 10:29:38,316 INFO    MainThread:98637 [wandb_init.py:init():892] sending inform_init request
+2025-12-24 10:29:38,323 INFO    MainThread:98637 [wandb_init.py:init():900] backend started and connected
+2025-12-24 10:29:38,351 INFO    MainThread:98637 [wandb_init.py:init():970] updated telemetry
+2025-12-24 10:29:38,353 INFO    MainThread:98637 [wandb_init.py:init():994] communicating run to backend with 90.0 second timeout
+2025-12-24 10:29:39,167 INFO    MainThread:98637 [wandb_init.py:init():1041] starting run threads in backend
+2025-12-24 10:29:39,247 INFO    MainThread:98637 [wandb_run.py:_console_start():2521] atexit reg
+2025-12-24 10:29:39,247 INFO    MainThread:98637 [wandb_run.py:_redirect():2369] redirect: wrap_raw
+2025-12-24 10:29:39,247 INFO    MainThread:98637 [wandb_run.py:_redirect():2438] Wrapping output streams.
+2025-12-24 10:29:39,247 INFO    MainThread:98637 [wandb_run.py:_redirect():2461] Redirects installed.
+2025-12-24 10:29:39,251 INFO    MainThread:98637 [wandb_init.py:init():1081] run started, returning control to user process
+2025-12-24 10:29:39,280 INFO    wandb-AsyncioManager-main:98637 [service_client.py:_forward_responses():80] Reached EOF.
+2025-12-24 10:29:39,280 INFO    wandb-AsyncioManager-main:98637 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.
+2025-12-24 10:30:58,599 ERROR   wandb-AsyncioManager-main:98637 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-24 10:30:58,605 ERROR   wandb-AsyncioManager-main:98637 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-24 10:30:58,605 ERROR   wandb-AsyncioManager-main:98637 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/asyncio/streams.py", line 392, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost

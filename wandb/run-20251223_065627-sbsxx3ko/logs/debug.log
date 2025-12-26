@@ -1,0 +1,543 @@
+2025-12-23 06:56:27,277 INFO    MainThread:18617 [wandb_setup.py:_flush():80] Current SDK version is 0.23.1
+2025-12-23 06:56:27,277 INFO    MainThread:18617 [wandb_setup.py:_flush():80] Configure stats pid to 18617
+2025-12-23 06:56:27,277 INFO    MainThread:18617 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/.config/wandb/settings
+2025-12-23 06:56:27,277 INFO    MainThread:18617 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/Chinese-Standard-Mahjong/wandb/settings
+2025-12-23 06:56:27,277 INFO    MainThread:18617 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-12-23 06:56:27,278 INFO    MainThread:18617 [wandb_init.py:setup_run_log_directory():714] Logging user logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251223_065627-sbsxx3ko/logs/debug.log
+2025-12-23 06:56:27,278 INFO    MainThread:18617 [wandb_init.py:setup_run_log_directory():715] Logging internal logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251223_065627-sbsxx3ko/logs/debug-internal.log
+2025-12-23 06:56:27,278 INFO    MainThread:18617 [wandb_init.py:init():841] calling init triggers
+2025-12-23 06:56:27,278 INFO    MainThread:18617 [wandb_init.py:init():846] wandb.init called with sweep_config: {}
+config: {'data_dir': './pretrain_data_bc', 'val_data_dir': None, 'output_dir': './bc_checkpoints', 'model_type': 'full', 'hidden_dim': 256, 'use_vec': True, 'batch_size': 1024, 'epochs': 10, 'lr': 0.001, 'weight_decay': 0.0001, 'num_workers': 0, 'wandb_project': 'mahjong-pretrain', 'wandb_name': None, 'no_wandb': False, 'device': 'cuda', 'save_interval': 1, 'resume': None, '_wandb': {}}
+2025-12-23 06:56:27,278 INFO    MainThread:18617 [wandb_init.py:init():889] starting backend
+2025-12-23 06:56:27,511 INFO    MainThread:18617 [wandb_init.py:init():892] sending inform_init request
+2025-12-23 06:56:27,518 INFO    MainThread:18617 [wandb_init.py:init():900] backend started and connected
+2025-12-23 06:56:27,546 INFO    MainThread:18617 [wandb_init.py:init():970] updated telemetry
+2025-12-23 06:56:27,548 INFO    MainThread:18617 [wandb_init.py:init():994] communicating run to backend with 90.0 second timeout
+2025-12-23 06:56:28,430 INFO    MainThread:18617 [wandb_init.py:init():1041] starting run threads in backend
+2025-12-23 06:56:28,506 INFO    MainThread:18617 [wandb_run.py:_console_start():2521] atexit reg
+2025-12-23 06:56:28,507 INFO    MainThread:18617 [wandb_run.py:_redirect():2369] redirect: wrap_raw
+2025-12-23 06:56:28,507 INFO    MainThread:18617 [wandb_run.py:_redirect():2438] Wrapping output streams.
+2025-12-23 06:56:28,507 INFO    MainThread:18617 [wandb_run.py:_redirect():2461] Redirects installed.
+2025-12-23 06:56:28,511 INFO    MainThread:18617 [wandb_init.py:init():1081] run started, returning control to user process
+2025-12-23 07:03:05,067 INFO    wandb-AsyncioManager-main:18617 [service_client.py:_forward_responses():80] Reached EOF.
+2025-12-23 07:03:05,067 INFO    wandb-AsyncioManager-main:18617 [mailbox.py:close():137] Closing mailbox, abandoning 1 handles.
+2025-12-23 07:03:05,417 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,420 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,423 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,423 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,424 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,425 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,425 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,425 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,426 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,426 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,426 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,429 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,429 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,429 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,430 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,430 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,431 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,431 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,432 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,432 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,433 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,434 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,435 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,437 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,438 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,438 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,438 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,439 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,439 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,440 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,440 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,449 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,450 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,450 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,451 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,452 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,453 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,454 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,456 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost
+2025-12-23 07:03:05,456 ERROR   wandb-AsyncioManager-main:18617 [asyncio_manager.py:fn_wrap_exceptions():183] Uncaught exception in run_soon callback.
+Traceback (most recent call last):
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/asyncio_manager.py", line 181, in fn_wrap_exceptions
+    await fn()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 38, in publish
+    await self._send_server_request(request)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/wandb/sdk/lib/service/service_client.py", line 64, in _send_server_request
+    await self._writer.drain()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 386, in drain
+    await self._protocol._drain_helper()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/asyncio/streams.py", line 166, in _drain_helper
+    raise ConnectionResetError('Connection lost')
+ConnectionResetError: Connection lost

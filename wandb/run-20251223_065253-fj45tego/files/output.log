@@ -1,0 +1,37 @@
+Loading training data...
+Loading 100 data files...
+Loading data: 100%|█████████████████████████████████████████████████████████████████████████████| 100/100 [00:29<00:00,  3.37it/s]
+Total samples: 5010154
+  obs: (5010154, 60, 4, 9), int8
+  vec: (5010154, 117), float16
+  act: (5010154,), int16
+Creating full model...
+Model parameters: 1,104,620 (trainable: 1,104,620)
+
+============================================================
+Epoch 1/10
+============================================================
+Training:  10%|███████▌                                                                      | 3790/39142 [00:59<09:19, 63.24it/s]
+Traceback (most recent call last):
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 316, in <module>
+    main()
+    ~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 252, in main
+    train_metrics = train_epoch(model, train_loader, optimizer, args.device)
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 84, in train_epoch
+    for batch in tqdm(dataloader, desc="Training"):
+                 ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+               ^^^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+    data = self._next_data()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 788, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+            ~~~~~~~~~~~~^^^^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 69, in __getitem__
+    "obs": torch.from_numpy(self.obs[idx]).long(),
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+KeyboardInterrupt

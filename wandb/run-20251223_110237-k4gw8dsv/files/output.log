@@ -1,0 +1,71 @@
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:537: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+
+============================================================
+Epoch 1/10
+============================================================
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:270: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast_ctx(**autocast_kwargs):
+  step 50: loss=0.5877 acc=0.7907
+  step 100: loss=0.5681 acc=0.7947
+  step 150: loss=0.5529 acc=0.7982
+  step 200: loss=0.5417 acc=0.8016
+  step 250: loss=0.5330 acc=0.8044
+  step 300: loss=0.5265 acc=0.8066
+  step 350: loss=0.5206 acc=0.8089
+  step 400: loss=0.5153 acc=0.8114
+  step 450: loss=0.5104 acc=0.8134
+  step 500: loss=0.5053 acc=0.8156
+  step 550: loss=0.5009 acc=0.8174
+  step 600: loss=0.4971 acc=0.8191
+Traceback (most recent call last):
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 648, in <module>
+    main()
+    ~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 565, in main
+    train_metrics = train_one_epoch(
+        model=model,
+    ...<8 lines>...
+        log_interval=int(args.log_interval),
+    )
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 257, in train_one_epoch
+    for batch in it:
+                 ^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 206, in __next__
+    self._preload()
+    ~~~~~~~~~~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 194, in _preload
+    batch = next(self.iter)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+    data = self._next_data()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+    idx, data = self._get_data()
+                ~~~~~~~~~~~~~~^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1444, in _get_data
+    success, data = self._try_get_data()
+                    ~~~~~~~~~~~~~~~~~~^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/queues.py", line 120, in get
+    return _ForkingPickler.loads(res)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/multiprocessing/reductions.py", line 541, in rebuild_storage_fd
+    fd = df.detach()
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/resource_sharer.py", line 57, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/connection.py", line 542, in Client
+    answer_challenge(c, authkey)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/connection.py", line 979, in answer_challenge
+    response = connection.recv_bytes(256)        # reject large message
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/connection.py", line 222, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/connection.py", line 454, in _recv_bytes
+    return self._recv(size)
+           ~~~~~~~~~~^^^^^^
+  File "/environment/miniconda3/envs/lab/lib/python3.14/multiprocessing/connection.py", line 412, in _recv
+    chunk = read(handle, to_read)
+KeyboardInterrupt

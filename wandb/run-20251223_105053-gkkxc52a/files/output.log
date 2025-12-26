@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 648, in <module>
+    main()
+    ~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 516, in main
+    model = torch.compile(model)
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/__init__.py", line 2590, in compile
+    raise RuntimeError("torch.compile is not supported on Python 3.14+")
+RuntimeError: torch.compile is not supported on Python 3.14+

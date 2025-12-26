@@ -1,0 +1,187 @@
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:549: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+
+============================================================
+Epoch 1/10
+============================================================
+train: 0it [00:00, ?it/s]/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:278: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast_ctx(**autocast_kwargs):
+train: 1it [00:15, 15.77s/it]/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:278: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast_ctx(**autocast_kwargs):
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:354: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  step 200: loss=0.5146 acc=0.8127
+  step 400: loss=0.4747 acc=0.8289
+  step 600: loss=0.4449 acc=0.8407
+  step 800: loss=0.4238 acc=0.8487
+  step 1000: loss=0.4078 acc=0.8548
+  step 1200: loss=0.3949 acc=0.8595
+  step 1400: loss=0.3843 acc=0.8634
+  step 1600: loss=0.3753 acc=0.8666
+  step 1800: loss=0.3677 acc=0.8694
+  with autocast_ctx(**autocast_kwargs):
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:354: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast_ctx(**autocast_kwargs):
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:354: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast_ctx(**autocast_kwargs):
+[Val] loss=0.2731 acc=0.9042 top5=0.9885
+[Train] loss=0.3633 acc=0.8710 | lr=0.000975773
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_1.pt
+✓ New best! acc=0.9042 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 2/10
+============================================================
+train: 0it [00:00, ?it/s]/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:278: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast_ctx(**autocast_kwargs):
+                                
+  step 200: loss=0.2942 acc=0.8959
+  step 400: loss=0.2913 acc=0.8969
+  step 600: loss=0.2890 acc=0.8977
+  step 800: loss=0.2863 acc=0.8987
+  step 1000: loss=0.2839 acc=0.8995
+  step 1200: loss=0.2816 acc=0.9003
+  step 1400: loss=0.2796 acc=0.9009
+  step 1600: loss=0.2776 acc=0.9016
+  step 1800: loss=0.2757 acc=0.9022
+[Val] loss=0.2428 acc=0.9136 top5=0.9925
+[Train] loss=0.2745 acc=0.9026 | lr=0.000905463
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_2.pt
+✓ New best! acc=0.9136 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 3/10
+============================================================
+  step 200: loss=0.2533 acc=0.9093
+  step 400: loss=0.2514 acc=0.9100
+  step 600: loss=0.2500 acc=0.9104
+  step 800: loss=0.2484 acc=0.9110
+  step 1000: loss=0.2469 acc=0.9115
+  step 1200: loss=0.2455 acc=0.9119
+  step 1400: loss=0.2443 acc=0.9123
+  step 1600: loss=0.2430 acc=0.9128
+  step 1800: loss=0.2417 acc=0.9132
+[Val] loss=0.2243 acc=0.9190 top5=0.9943
+[Train] loss=0.2410 acc=0.9134 | lr=0.000795954
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_3.pt
+✓ New best! acc=0.9190 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 4/10
+============================================================
+  step 200: loss=0.2280 acc=0.9175
+  step 400: loss=0.2267 acc=0.9180
+  step 600: loss=0.2261 acc=0.9182
+  step 800: loss=0.2252 acc=0.9185
+  step 1000: loss=0.2244 acc=0.9188
+  step 1200: loss=0.2236 acc=0.9190
+  step 1400: loss=0.2229 acc=0.9193
+  step 1600: loss=0.2221 acc=0.9195
+  step 1800: loss=0.2213 acc=0.9198
+[Val] loss=0.2099 acc=0.9239 top5=0.9956
+[Train] loss=0.2209 acc=0.9199 | lr=0.000657963
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_4.pt
+✓ New best! acc=0.9239 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 5/10
+============================================================
+  step 200: loss=0.2121 acc=0.9230
+  step 400: loss=0.2111 acc=0.9234
+  step 600: loss=0.2108 acc=0.9235
+  step 800: loss=0.2101 acc=0.9237
+  step 1000: loss=0.2093 acc=0.9240
+  step 1200: loss=0.2088 acc=0.9241
+  step 1400: loss=0.2082 acc=0.9243
+  step 1600: loss=0.2076 acc=0.9245
+  step 1800: loss=0.2070 acc=0.9247
+[Val] loss=0.1983 acc=0.9280 top5=0.9963
+[Train] loss=0.2067 acc=0.9248 | lr=0.000505
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_5.pt
+✓ New best! acc=0.9280 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 6/10
+============================================================
+  step 200: loss=0.1998 acc=0.9273
+  step 400: loss=0.1987 acc=0.9276
+  step 600: loss=0.1986 acc=0.9276
+  step 800: loss=0.1981 acc=0.9277
+  step 1000: loss=0.1976 acc=0.9279
+  step 1200: loss=0.1971 acc=0.9281
+  step 1400: loss=0.1967 acc=0.9282
+  step 1600: loss=0.1962 acc=0.9284
+  step 1800: loss=0.1958 acc=0.9285
+[Val] loss=0.1901 acc=0.9305 top5=0.9967
+[Train] loss=0.1955 acc=0.9286 | lr=0.000352037
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_6.pt
+✓ New best! acc=0.9305 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 7/10
+============================================================
+  step 200: loss=0.1904 acc=0.9303
+  step 400: loss=0.1895 acc=0.9307
+  step 600: loss=0.1895 acc=0.9307
+  step 800: loss=0.1890 acc=0.9309
+  step 1000: loss=0.1885 acc=0.9310
+  step 1200: loss=0.1881 acc=0.9311
+  step 1400: loss=0.1878 acc=0.9313
+  step 1600: loss=0.1874 acc=0.9314
+  step 1800: loss=0.1870 acc=0.9315
+[Val] loss=0.1835 acc=0.9327 top5=0.9971
+[Train] loss=0.1867 acc=0.9316 | lr=0.000214046
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_7.pt
+✓ New best! acc=0.9327 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 8/10
+============================================================
+  step 200: loss=0.1840 acc=0.9325
+  step 400: loss=0.1829 acc=0.9328
+  step 600: loss=0.1830 acc=0.9328
+  step 800: loss=0.1825 acc=0.9330
+  step 1000: loss=0.1821 acc=0.9331
+  step 1200: loss=0.1818 acc=0.9332
+  step 1400: loss=0.1813 acc=0.9334
+  step 1600: loss=0.1810 acc=0.9335
+  step 1800: loss=0.1807 acc=0.9336
+[Val] loss=0.1790 acc=0.9345 top5=0.9972
+[Train] loss=0.1805 acc=0.9337 | lr=0.000104537
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_8.pt
+✓ New best! acc=0.9345 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 9/10
+============================================================
+  step 200: loss=0.1792 acc=0.9341
+  step 400: loss=0.1784 acc=0.9345
+  step 600: loss=0.1784 acc=0.9345
+  step 800: loss=0.1781 acc=0.9345
+  step 1000: loss=0.1776 acc=0.9347
+  step 1200: loss=0.1773 acc=0.9348
+  step 1400: loss=0.1769 acc=0.9349
+  step 1600: loss=0.1765 acc=0.9350
+  step 1800: loss=0.1762 acc=0.9352
+[Val] loss=0.1772 acc=0.9350 top5=0.9973
+[Train] loss=0.1760 acc=0.9353 | lr=3.4227e-05
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_9.pt
+✓ New best! acc=0.9350 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 10/10
+============================================================
+  step 200: loss=0.1765 acc=0.9350
+  step 400: loss=0.1759 acc=0.9352
+  step 600: loss=0.1761 acc=0.9352
+  step 800: loss=0.1757 acc=0.9353
+  step 1000: loss=0.1752 acc=0.9355
+  step 1200: loss=0.1749 acc=0.9356
+  step 1400: loss=0.1745 acc=0.9357
+  step 1600: loss=0.1741 acc=0.9359
+  step 1800: loss=0.1736 acc=0.9360
+[Val] loss=0.1760 acc=0.9355 top5=0.9974
+[Train] loss=0.1734 acc=0.9361 | lr=1e-05
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_10.pt
+✓ New best! acc=0.9355 -> ./checkpoints_stream/best_model.pt
+
+Training complete. Saved final model to ./checkpoints_stream/final_model.pt

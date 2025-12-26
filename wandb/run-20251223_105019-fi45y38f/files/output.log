@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 648, in <module>
+    main()
+    ~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 465, in main
+    train_ds = NPZShardBatchDataset(
+        data_dir=args.data_dir,
+    ...<7 lines>...
+        limit_files=args.limit_files,
+    )
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 96, in __init__
+    raise ValueError(f"No data files found: {data_dir}/{file_pattern}")
+ValueError: No data files found: /path/to/train_npz/*.npz

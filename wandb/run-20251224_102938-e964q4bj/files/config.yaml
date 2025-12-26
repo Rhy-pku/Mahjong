@@ -1,0 +1,109 @@
+_wandb:
+    value:
+        cli_version: 0.23.1
+        e:
+            cf2sr7f6oyd568irdbp5sn7foz1nq6dr:
+                args:
+                    - --data_dir
+                    - /home/featurize/Chinese-Standard-Mahjong/pretrain_data_bc
+                    - --val_data_dir
+                    - /home/featurize/Chinese-Standard-Mahjong/validate_data_bc
+                    - --batch_size
+                    - "8192"
+                    - --num_workers
+                    - "12"
+                    - --prefetch_to_gpu
+                    - --log_interval
+                    - "200"
+                codePath: pretrain_bc.py
+                codePathLocal: pretrain_bc.py
+                email: liuminghao491@gmail.com
+                executable: /environment/miniconda3/envs/lab311/bin/python
+                host: featurize
+                os: Linux-5.15.0-105-generic-x86_64-with-glibc2.35
+                program: /home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py
+                python: CPython 3.11.14
+                root: /home/featurize/Chinese-Standard-Mahjong
+                startedAt: "2025-12-24T10:29:38.098562Z"
+                writerId: cf2sr7f6oyd568irdbp5sn7foz1nq6dr
+        m: []
+        python_version: 3.11.14
+        t:
+            "1":
+                - 1
+            "2":
+                - 1
+            "3":
+                - 16
+            "4": 3.11.14
+            "5": 0.23.1
+            "12": 0.23.1
+            "13": linux-x86_64
+batch_size:
+    value: 8192
+compile:
+    value: false
+data_dir:
+    value: /home/featurize/Chinese-Standard-Mahjong/pretrain_data_bc
+ddp:
+    value: false
+drop_last:
+    value: true
+epochs:
+    value: 20
+file_pattern:
+    value: '*.npz'
+grad_accum:
+    value: 1
+hidden_dim:
+    value: 256
+limit_files:
+    value: null
+local_rank:
+    value: 0
+log_interval:
+    value: 200
+lr:
+    value: 0.002
+max_grad_norm:
+    value: 1
+model_type:
+    value: full
+no_amp:
+    value: false
+no_prefetch_to_gpu:
+    value: false
+no_shuffle_in_file:
+    value: false
+no_wandb:
+    value: false
+num_workers:
+    value: 12
+output_dir:
+    value: ./checkpoints_stream
+prefetch_factor:
+    value: 2
+prefetch_to_gpu:
+    value: true
+resume:
+    value: null
+save_interval:
+    value: 1
+seed:
+    value: 42
+shuffle_files:
+    value: true
+tf32:
+    value: true
+use_vec:
+    value: true
+val_batch_size:
+    value: null
+val_data_dir:
+    value: /home/featurize/Chinese-Standard-Mahjong/validate_data_bc
+wandb_name:
+    value: null
+wandb_project:
+    value: mahjong-pretrain
+weight_decay:
+    value: 0.0001

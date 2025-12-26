@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 660, in <module>
+    main()
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 522, in main
+    model = PretrainModel(hidden_dim=args.hidden_dim, use_vec=args.use_vec)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/featurize/Chinese-Standard-Mahjong/model_pretrain.py", line 228, in __init__
+    self.transformer = MahjongTransformer(channels=128, num_layers=3, num_heads=8)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/featurize/Chinese-Standard-Mahjong/model_pretrain.py", line 84, in __init__
+    encoder_layer = nn.TransformerEncoderLayer(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/nn/modules/transformer.py", line 764, in __init__
+    activation = _get_activation_fn(activation)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/environment/miniconda3/envs/lab311/lib/python3.11/site-packages/torch/nn/modules/transformer.py", line 1191, in _get_activation_fn
+    raise RuntimeError(f"activation should be relu/gelu, not {activation}")
+RuntimeError: activation should be relu/gelu, not gELU

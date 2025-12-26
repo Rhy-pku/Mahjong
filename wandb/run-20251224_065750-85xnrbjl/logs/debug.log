@@ -1,0 +1,26 @@
+2025-12-24 06:57:50,327 INFO    MainThread:23034 [wandb_setup.py:_flush():80] Current SDK version is 0.23.1
+2025-12-24 06:57:50,327 INFO    MainThread:23034 [wandb_setup.py:_flush():80] Configure stats pid to 23034
+2025-12-24 06:57:50,327 INFO    MainThread:23034 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/.config/wandb/settings
+2025-12-24 06:57:50,327 INFO    MainThread:23034 [wandb_setup.py:_flush():80] Loading settings from /home/featurize/Chinese-Standard-Mahjong/wandb/settings
+2025-12-24 06:57:50,328 INFO    MainThread:23034 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-12-24 06:57:50,328 INFO    MainThread:23034 [wandb_init.py:setup_run_log_directory():714] Logging user logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251224_065750-85xnrbjl/logs/debug.log
+2025-12-24 06:57:50,328 INFO    MainThread:23034 [wandb_init.py:setup_run_log_directory():715] Logging internal logs to /home/featurize/Chinese-Standard-Mahjong/wandb/run-20251224_065750-85xnrbjl/logs/debug-internal.log
+2025-12-24 06:57:50,328 INFO    MainThread:23034 [wandb_init.py:init():841] calling init triggers
+2025-12-24 06:57:50,328 INFO    MainThread:23034 [wandb_init.py:init():846] wandb.init called with sweep_config: {}
+config: {'data_dir': '/home/featurize/Chinese-Standard-Mahjong/pretrain_data_bc', 'val_data_dir': '/home/featurize/Chinese-Standard-Mahjong/validate_data_bc', 'output_dir': './checkpoints_stream', 'model_type': 'full', 'hidden_dim': 256, 'use_vec': True, 'file_pattern': '*.npz', 'batch_size': 8192, 'val_batch_size': None, 'num_workers': 12, 'prefetch_factor': 2, 'shuffle_files': True, 'no_shuffle_in_file': False, 'drop_last': True, 'seed': 42, 'limit_files': None, 'epochs': 10, 'lr': 0.001, 'weight_decay': 0.0001, 'grad_accum': 1, 'max_grad_norm': 1.0, 'no_amp': False, 'compile': False, 'prefetch_to_gpu': True, 'no_prefetch_to_gpu': False, 'tf32': True, 'ddp': False, 'local_rank': 0, 'save_interval': 1, 'resume': None, 'log_interval': 200, 'no_wandb': False, 'wandb_project': 'mahjong-pretrain', 'wandb_name': None, '_wandb': {}}
+2025-12-24 06:57:50,328 INFO    MainThread:23034 [wandb_init.py:init():889] starting backend
+2025-12-24 06:57:50,585 INFO    MainThread:23034 [wandb_init.py:init():892] sending inform_init request
+2025-12-24 06:57:50,593 INFO    MainThread:23034 [wandb_init.py:init():900] backend started and connected
+2025-12-24 06:57:50,633 INFO    MainThread:23034 [wandb_init.py:init():970] updated telemetry
+2025-12-24 06:57:50,635 INFO    MainThread:23034 [wandb_init.py:init():994] communicating run to backend with 90.0 second timeout
+2025-12-24 06:57:51,582 INFO    MainThread:23034 [wandb_init.py:init():1041] starting run threads in backend
+2025-12-24 06:57:51,711 INFO    MainThread:23034 [wandb_run.py:_console_start():2521] atexit reg
+2025-12-24 06:57:51,711 INFO    MainThread:23034 [wandb_run.py:_redirect():2369] redirect: wrap_raw
+2025-12-24 06:57:51,711 INFO    MainThread:23034 [wandb_run.py:_redirect():2438] Wrapping output streams.
+2025-12-24 06:57:51,711 INFO    MainThread:23034 [wandb_run.py:_redirect():2461] Redirects installed.
+2025-12-24 06:57:51,718 INFO    MainThread:23034 [wandb_init.py:init():1081] run started, returning control to user process
+2025-12-24 07:24:44,177 INFO    MainThread:23034 [wandb_run.py:_finish():2287] finishing run liuminghao491-peking-university/mahjong-pretrain/85xnrbjl
+2025-12-24 07:24:44,178 INFO    MainThread:23034 [wandb_run.py:_atexit_cleanup():2486] got exitcode: 0
+2025-12-24 07:24:44,178 INFO    MainThread:23034 [wandb_run.py:_restore():2468] restore
+2025-12-24 07:24:44,178 INFO    MainThread:23034 [wandb_run.py:_restore():2474] restore done
+2025-12-24 07:24:45,739 INFO    MainThread:23034 [wandb_run.py:_footer_sync_info():3862] logging synced files

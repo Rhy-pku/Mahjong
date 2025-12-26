@@ -1,0 +1,348 @@
+/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:555: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+
+============================================================
+Epoch 1/10
+============================================================
+train: 0it [00:00, ?it/s]/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py:284: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast_ctx(**autocast_kwargs):
+                                 
+  step 50: loss=0.5880 acc=0.7896
+  step 100: loss=0.5681 acc=0.7941
+  step 150: loss=0.5529 acc=0.7978
+  step 200: loss=0.5418 acc=0.8010
+  step 250: loss=0.5328 acc=0.8040
+  step 300: loss=0.5262 acc=0.8065
+  step 350: loss=0.5195 acc=0.8094
+  step 400: loss=0.5137 acc=0.8119
+  step 450: loss=0.5087 acc=0.8140
+  step 500: loss=0.5035 acc=0.8161
+  step 550: loss=0.4989 acc=0.8181
+  step 600: loss=0.4949 acc=0.8198
+  step 650: loss=0.4909 acc=0.8215
+  step 700: loss=0.4869 acc=0.8232
+  step 750: loss=0.4831 acc=0.8247
+  step 800: loss=0.4796 acc=0.8263
+  step 850: loss=0.4761 acc=0.8278
+  step 900: loss=0.4726 acc=0.8292
+  step 950: loss=0.4695 acc=0.8305
+  step 1000: loss=0.4664 acc=0.8318
+  step 1050: loss=0.4635 acc=0.8331
+  step 1100: loss=0.4605 acc=0.8343
+  step 1150: loss=0.4575 acc=0.8355
+  step 1200: loss=0.4548 acc=0.8366
+  step 1250: loss=0.4521 acc=0.8376
+  step 1300: loss=0.4496 acc=0.8386
+  step 1350: loss=0.4474 acc=0.8395
+  step 1400: loss=0.4450 acc=0.8405
+  step 1450: loss=0.4429 acc=0.8413
+  step 1500: loss=0.4407 acc=0.8421
+  step 1550: loss=0.4388 acc=0.8429
+  step 1600: loss=0.4370 acc=0.8436
+  step 1650: loss=0.4352 acc=0.8443
+  step 1700: loss=0.4335 acc=0.8450
+  step 1750: loss=0.4315 acc=0.8457
+  step 1800: loss=0.4298 acc=0.8464
+  step 1850: loss=0.4280 acc=0.8471
+  step 1900: loss=0.4263 acc=0.8477
+  step 1950: loss=0.4246 acc=0.8483
+  step 2000: loss=0.4230 acc=0.8489
+  step 2050: loss=0.4215 acc=0.8495
+  step 2100: loss=0.4200 acc=0.8501
+  step 2150: loss=0.4185 acc=0.8506
+  step 2200: loss=0.4171 acc=0.8511
+  step 2250: loss=0.4157 acc=0.8516
+  step 2300: loss=0.4144 acc=0.8521
+  step 2350: loss=0.4131 acc=0.8526
+  step 2400: loss=0.4118 acc=0.8531
+  step 2450: loss=0.4104 acc=0.8536
+  step 2500: loss=0.4091 acc=0.8541
+  step 2550: loss=0.4079 acc=0.8546
+  step 2600: loss=0.4067 acc=0.8550
+  step 2650: loss=0.4055 acc=0.8554
+  step 2700: loss=0.4044 acc=0.8559
+  step 2750: loss=0.4032 acc=0.8563
+  step 2800: loss=0.4022 acc=0.8567
+  step 2850: loss=0.4011 acc=0.8571
+  step 2900: loss=0.4001 acc=0.8575
+  step 2950: loss=0.3990 acc=0.8579
+  step 3000: loss=0.3979 acc=0.8582
+  step 3050: loss=0.3969 acc=0.8586
+  step 3100: loss=0.3958 acc=0.8590
+  step 3150: loss=0.3948 acc=0.8594
+  step 3200: loss=0.3938 acc=0.8598
+  step 3250: loss=0.3927 acc=0.8601
+  step 3300: loss=0.3916 acc=0.8605
+  step 3350: loss=0.3906 acc=0.8609
+  step 3400: loss=0.3895 acc=0.8613
+  step 3450: loss=0.3886 acc=0.8616
+  step 3500: loss=0.3877 acc=0.8620
+  step 3550: loss=0.3867 acc=0.8623
+  step 3600: loss=0.3857 acc=0.8627
+  step 3650: loss=0.3848 acc=0.8630
+  step 3700: loss=0.3839 acc=0.8633
+  step 3750: loss=0.3830 acc=0.8636
+  step 3800: loss=0.3821 acc=0.8640
+  step 3850: loss=0.3812 acc=0.8643
+  step 3900: loss=0.3803 acc=0.8646
+  step 3950: loss=0.3795 acc=0.8649
+  step 4000: loss=0.3787 acc=0.8652
+  step 4050: loss=0.3778 acc=0.8655
+  step 4100: loss=0.3770 acc=0.8659
+  step 4150: loss=0.3762 acc=0.8661
+  step 4200: loss=0.3754 acc=0.8664
+  step 4250: loss=0.3746 acc=0.8667
+  step 4300: loss=0.3739 acc=0.8670
+  step 4350: loss=0.3731 acc=0.8673
+  step 4400: loss=0.3723 acc=0.8676
+  step 4450: loss=0.3715 acc=0.8678
+  step 4500: loss=0.3707 acc=0.8681
+  step 4550: loss=0.3699 acc=0.8684
+  step 4600: loss=0.3692 acc=0.8687
+  step 4650: loss=0.3684 acc=0.8689
+  step 4700: loss=0.3677 acc=0.8692
+  step 4750: loss=0.3670 acc=0.8695
+  step 4800: loss=0.3662 acc=0.8697
+  step 4850: loss=0.3655 acc=0.8700
+  step 4900: loss=0.3647 acc=0.8703
+  step 4950: loss=0.3640 acc=0.8705
+  step 5000: loss=0.3633 acc=0.8708
+  step 5050: loss=0.3625 acc=0.8711
+  step 5100: loss=0.3618 acc=0.8713
+  step 5150: loss=0.3611 acc=0.8716
+  step 5200: loss=0.3604 acc=0.8718
+  step 5250: loss=0.3597 acc=0.8721
+  step 5300: loss=0.3590 acc=0.8723
+  step 5350: loss=0.3583 acc=0.8726
+  step 5400: loss=0.3576 acc=0.8728
+  step 5450: loss=0.3569 acc=0.8731
+  step 5500: loss=0.3562 acc=0.8733
+  step 5550: loss=0.3556 acc=0.8736
+  step 5600: loss=0.3549 acc=0.8738
+  step 5650: loss=0.3542 acc=0.8740
+  step 5700: loss=0.3536 acc=0.8743
+  step 5750: loss=0.3530 acc=0.8745
+  step 5800: loss=0.3524 acc=0.8747
+  step 5850: loss=0.3517 acc=0.8749
+  step 5900: loss=0.3511 acc=0.8752
+  step 5950: loss=0.3505 acc=0.8754
+  step 6000: loss=0.3499 acc=0.8756
+  step 6050: loss=0.3493 acc=0.8758
+  step 6100: loss=0.3487 acc=0.8760
+  step 6150: loss=0.3481 acc=0.8762
+  step 6200: loss=0.3475 acc=0.8764
+  step 6250: loss=0.3470 acc=0.8767
+  step 6300: loss=0.3464 acc=0.8769
+  step 6350: loss=0.3458 acc=0.8771
+  step 6400: loss=0.3452 acc=0.8773
+  step 6450: loss=0.3447 acc=0.8775
+  step 6500: loss=0.3441 acc=0.8777
+  step 6550: loss=0.3435 acc=0.8779
+  step 6600: loss=0.3429 acc=0.8781
+  step 6650: loss=0.3423 acc=0.8783
+  step 6700: loss=0.3418 acc=0.8785
+  step 6750: loss=0.3412 acc=0.8787
+  step 6800: loss=0.3407 acc=0.8789
+  step 6850: loss=0.3402 acc=0.8791
+  step 6900: loss=0.3396 acc=0.8793
+  step 6950: loss=0.3390 acc=0.8795
+  step 7000: loss=0.3385 acc=0.8797
+  step 7050: loss=0.3379 acc=0.8799
+  step 7100: loss=0.3374 acc=0.8801
+  step 7150: loss=0.3369 acc=0.8802
+  step 7200: loss=0.3363 acc=0.8804
+  step 7250: loss=0.3358 acc=0.8806
+  step 7300: loss=0.3353 acc=0.8808
+  step 7350: loss=0.3348 acc=0.8810
+  step 7400: loss=0.3343 acc=0.8812
+  step 7450: loss=0.3337 acc=0.8813
+  step 7500: loss=0.3332 acc=0.8815
+  step 7550: loss=0.3327 acc=0.8817
+  step 7600: loss=0.3322 acc=0.8819
+  step 7650: loss=0.3317 acc=0.8820
+  with autocast_ctx(**autocast_kwargs):
+[Val] loss=0.2430 acc=0.9139 top5=0.9925
+[Train] loss=0.3313 acc=0.8822 | lr=0.000975773
+Saved checkpoint: ./checkpoints_stream/checkpoint_epoch_1.pt
+✓ New best! acc=0.9139 -> ./checkpoints_stream/best_model.pt
+
+============================================================
+Epoch 2/10
+============================================================
+                                 
+  step 50: loss=0.2510 acc=0.9099
+  step 100: loss=0.2552 acc=0.9083
+  step 150: loss=0.2544 acc=0.9084
+  step 200: loss=0.2544 acc=0.9086
+  step 250: loss=0.2541 acc=0.9087
+  step 300: loss=0.2538 acc=0.9087
+  step 350: loss=0.2536 acc=0.9089
+  step 400: loss=0.2535 acc=0.9089
+  step 450: loss=0.2537 acc=0.9088
+  step 500: loss=0.2534 acc=0.9089
+  step 550: loss=0.2529 acc=0.9091
+  step 600: loss=0.2527 acc=0.9092
+  step 650: loss=0.2525 acc=0.9092
+  step 700: loss=0.2523 acc=0.9093
+  step 750: loss=0.2523 acc=0.9094
+  step 800: loss=0.2522 acc=0.9094
+  step 850: loss=0.2519 acc=0.9096
+  step 900: loss=0.2519 acc=0.9096
+  step 950: loss=0.2516 acc=0.9097
+  step 1000: loss=0.2514 acc=0.9098
+  step 1050: loss=0.2513 acc=0.9099
+  step 1100: loss=0.2511 acc=0.9099
+  step 1150: loss=0.2507 acc=0.9101
+  step 1200: loss=0.2505 acc=0.9101
+  step 1250: loss=0.2502 acc=0.9102
+  step 1300: loss=0.2499 acc=0.9103
+  step 1350: loss=0.2498 acc=0.9103
+  step 1400: loss=0.2495 acc=0.9104
+  step 1450: loss=0.2494 acc=0.9105
+  step 1500: loss=0.2491 acc=0.9105
+  step 1550: loss=0.2489 acc=0.9106
+  step 1600: loss=0.2489 acc=0.9106
+  step 1650: loss=0.2488 acc=0.9107
+  step 1700: loss=0.2487 acc=0.9107
+  step 1750: loss=0.2484 acc=0.9108
+  step 1800: loss=0.2483 acc=0.9109
+  step 1850: loss=0.2481 acc=0.9109
+  step 1900: loss=0.2479 acc=0.9110
+  step 1950: loss=0.2477 acc=0.9110
+  step 2000: loss=0.2474 acc=0.9111
+  step 2050: loss=0.2474 acc=0.9111
+  step 2100: loss=0.2472 acc=0.9112
+  step 2150: loss=0.2470 acc=0.9112
+  step 2200: loss=0.2469 acc=0.9113
+  step 2250: loss=0.2467 acc=0.9113
+  step 2300: loss=0.2466 acc=0.9114
+  step 2350: loss=0.2464 acc=0.9114
+  step 2400: loss=0.2463 acc=0.9114
+  step 2450: loss=0.2460 acc=0.9115
+  step 2500: loss=0.2459 acc=0.9116
+  step 2550: loss=0.2457 acc=0.9116
+  step 2600: loss=0.2455 acc=0.9117
+  step 2650: loss=0.2454 acc=0.9118
+  step 2700: loss=0.2453 acc=0.9118
+  step 2750: loss=0.2451 acc=0.9119
+  step 2800: loss=0.2450 acc=0.9119
+  step 2850: loss=0.2448 acc=0.9120
+  step 2900: loss=0.2448 acc=0.9120
+  step 2950: loss=0.2446 acc=0.9120
+  step 3000: loss=0.2445 acc=0.9121
+  step 3050: loss=0.2444 acc=0.9121
+  step 3100: loss=0.2442 acc=0.9122
+  step 3150: loss=0.2441 acc=0.9122
+  step 3200: loss=0.2439 acc=0.9122
+  step 3250: loss=0.2438 acc=0.9123
+  step 3300: loss=0.2436 acc=0.9124
+  step 3350: loss=0.2434 acc=0.9124
+  step 3400: loss=0.2432 acc=0.9125
+  step 3450: loss=0.2431 acc=0.9125
+  step 3500: loss=0.2430 acc=0.9125
+  step 3550: loss=0.2428 acc=0.9126
+  step 3600: loss=0.2427 acc=0.9127
+  step 3650: loss=0.2426 acc=0.9127
+  step 3700: loss=0.2424 acc=0.9127
+  step 3750: loss=0.2423 acc=0.9128
+  step 3800: loss=0.2422 acc=0.9128
+  step 3850: loss=0.2420 acc=0.9129
+  step 3900: loss=0.2419 acc=0.9129
+  step 3950: loss=0.2418 acc=0.9129
+  step 4000: loss=0.2417 acc=0.9130
+  step 4050: loss=0.2415 acc=0.9130
+  step 4100: loss=0.2414 acc=0.9131
+  step 4150: loss=0.2412 acc=0.9131
+  step 4200: loss=0.2411 acc=0.9132
+  step 4250: loss=0.2410 acc=0.9132
+  step 4300: loss=0.2409 acc=0.9132
+  step 4350: loss=0.2408 acc=0.9133
+  step 4400: loss=0.2406 acc=0.9133
+  step 4450: loss=0.2404 acc=0.9134
+  step 4500: loss=0.2403 acc=0.9134
+  step 4550: loss=0.2402 acc=0.9135
+  step 4600: loss=0.2401 acc=0.9135
+  step 4650: loss=0.2399 acc=0.9135
+  step 4700: loss=0.2398 acc=0.9136
+  step 4750: loss=0.2396 acc=0.9136
+  step 4800: loss=0.2395 acc=0.9137
+  step 4850: loss=0.2394 acc=0.9137
+  step 4900: loss=0.2392 acc=0.9138
+  step 4950: loss=0.2391 acc=0.9138
+  step 5000: loss=0.2390 acc=0.9138
+  step 5050: loss=0.2388 acc=0.9139
+  step 5100: loss=0.2387 acc=0.9139
+  step 5150: loss=0.2386 acc=0.9140
+  step 5200: loss=0.2385 acc=0.9140
+  step 5250: loss=0.2383 acc=0.9140
+  step 5300: loss=0.2382 acc=0.9141
+  step 5350: loss=0.2381 acc=0.9141
+  step 5400: loss=0.2380 acc=0.9142
+  step 5450: loss=0.2378 acc=0.9142
+  step 5500: loss=0.2377 acc=0.9142
+  step 5550: loss=0.2376 acc=0.9143
+  step 5600: loss=0.2374 acc=0.9143
+  step 5650: loss=0.2373 acc=0.9144
+  step 5700: loss=0.2372 acc=0.9144
+  step 5750: loss=0.2371 acc=0.9144
+  step 5800: loss=0.2370 acc=0.9145
+  step 5850: loss=0.2369 acc=0.9145
+  step 5900: loss=0.2368 acc=0.9146
+  step 5950: loss=0.2366 acc=0.9146
+  step 6000: loss=0.2365 acc=0.9146
+  step 6050: loss=0.2364 acc=0.9147
+  step 6100: loss=0.2363 acc=0.9147
+  step 6150: loss=0.2362 acc=0.9147
+  step 6200: loss=0.2361 acc=0.9148
+  step 6250: loss=0.2360 acc=0.9148
+  step 6300: loss=0.2359 acc=0.9148
+  step 6350: loss=0.2358 acc=0.9149
+  step 6400: loss=0.2357 acc=0.9149
+  step 6450: loss=0.2356 acc=0.9149
+  step 6500: loss=0.2355 acc=0.9150
+  step 6550: loss=0.2354 acc=0.9150
+  step 6600: loss=0.2353 acc=0.9150
+  step 6650: loss=0.2352 acc=0.9151
+  step 6700: loss=0.2350 acc=0.9151
+  step 6750: loss=0.2349 acc=0.9152
+  step 6800: loss=0.2348 acc=0.9152
+  step 6850: loss=0.2348 acc=0.9152
+  step 6900: loss=0.2346 acc=0.9153
+  step 6950: loss=0.2345 acc=0.9153
+  step 7000: loss=0.2344 acc=0.9154
+  step 7050: loss=0.2343 acc=0.9154
+  step 7100: loss=0.2342 acc=0.9154
+  step 7150: loss=0.2341 acc=0.9155
+  step 7200: loss=0.2340 acc=0.9155
+  step 7250: loss=0.2338 acc=0.9155
+  step 7300: loss=0.2337 acc=0.9156
+  step 7350: loss=0.2336 acc=0.9156
+  step 7400: loss=0.2335 acc=0.9157
+  step 7450: loss=0.2334 acc=0.9157
+  step 7500: loss=0.2333 acc=0.9157
+  step 7550: loss=0.2332 acc=0.9158
+  step 7600: loss=0.2331 acc=0.9158
+  step 7650: loss=0.2330 acc=0.9158
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 666, in <module>
+    main()
+    ~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 598, in main
+    val_metrics = validate(
+        model=model,
+    ...<3 lines>...
+        prefetch_to_gpu=prefetch_to_gpu,
+    )
+  File "/environment/miniconda3/envs/lab/lib/python3.14/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 350, in validate
+    for batch in it:
+                 ^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 212, in __next__
+    self._preload()
+    ~~~~~~~~~~~~~^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 205, in _preload
+    self.next_batch = self._to_device(batch)
+                      ~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py", line 192, in _to_device
+    obs = batch["obs"].to(self.device, non_blocking=True)
+KeyboardInterrupt

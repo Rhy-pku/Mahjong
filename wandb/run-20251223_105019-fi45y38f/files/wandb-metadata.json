@@ -1,0 +1,26 @@
+{
+  "os":  "Linux-5.15.0-105-generic-x86_64-with-glibc2.35",
+  "python":  "CPython 3.14.2",
+  "startedAt":  "2025-12-23T10:50:19.763004Z",
+  "args":  [
+    "--data_dir",
+    "/path/to/train_npz",
+    "--val_data_dir",
+    "/path/to/val_npz",
+    "--batch_size",
+    "2048",
+    "--num_workers",
+    "6",
+    "--compile",
+    "--log_interval",
+    "50"
+  ],
+  "program":  "/home/featurize/Chinese-Standard-Mahjong/pretrain_bc.py",
+  "codePath":  "pretrain_bc.py",
+  "codePathLocal":  "pretrain_bc.py",
+  "email":  "liuminghao491@gmail.com",
+  "root":  "/home/featurize/Chinese-Standard-Mahjong",
+  "host":  "featurize",
+  "executable":  "/environment/miniconda3/envs/lab/bin/python",
+  "writerId":  "thchy0rhl29lg4f3sohadkprmuwnui6g"
+}
