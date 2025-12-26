@@ -189,15 +189,12 @@ def process_match(lines: List[str]) -> List[dict]:
     cur_tile = None
     scores = None
     step_id = 0
-    match_id = 0
+    match_id = "0"
 
     if lines:
         first = lines[0].split()
         if len(first) >= 2 and first[0] == "Match":
-            try:
-                match_id = int(first[1], 16)
-            except ValueError:
-                match_id = 0
+            match_id = first[1]
 
     for line in lines:
         t = line.split()
@@ -330,6 +327,7 @@ def process_match(lines: List[str]) -> List[dict]:
     for p in range(4):
         for s in player_samples[p]:
             s["reward"] = scores[p]
+            s["reward_vec"] = scores
             all_samples.append(s)
     return all_samples
 
@@ -343,8 +341,9 @@ def _save_batch(output_dir, file_idx, samples):
         student_mask=np.stack([s["student_mask"] for s in samples]).astype(np.int8),
         action=np.array([s["action"] for s in samples], dtype=np.int16),
         reward=np.array([s["reward"] for s in samples], dtype=np.float32),
+        reward_vec=np.stack([s["reward_vec"] for s in samples]).astype(np.float32),
         player=np.array([s["player"] for s in samples], dtype=np.int8),
-        match_id=np.array([s["match_id"] for s in samples], dtype=np.int64),
+        match_id=np.array([s["match_id"] for s in samples], dtype="U32"),
         step_id=np.array([s["step_id"] for s in samples], dtype=np.int32),
     )
 

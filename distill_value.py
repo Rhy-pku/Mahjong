@@ -27,6 +27,24 @@ def load_state_dict_compat(model, ckpt_path):
     return model
 
 
+def load_state_dict_compat_dict(ckpt_path):
+    sd = torch.load(ckpt_path, map_location="cpu")
+    if isinstance(sd, dict) and "model" in sd and isinstance(sd["model"], dict):
+        sd = sd["model"]
+    if any(k.startswith("_orig_mod.") for k in sd.keys()):
+        sd = {k[len("_orig_mod."):]: v for k, v in sd.items()}
+    if any(k.startswith("module.") for k in sd.keys()):
+        sd = {k[len("module."):]: v for k, v in sd.items()}
+    return sd
+
+
+def infer_value_dim(state_dict):
+    key = "value_head.2.weight"
+    if key in state_dict:
+        return int(state_dict[key].shape[0])
+    return 1
+
+
 def _iter_files(data_dir):
     return sorted(glob.glob(os.path.join(data_dir, "*.npz")))
 
@@ -58,8 +76,15 @@ def distill(
     sample = np.load(files[0])
     teacher_in_channels = sample["oracle_obs"].shape[1]
 
-    teacher = PretrainModel(hidden_dim=hidden_dim, use_vec=False, in_channels=teacher_in_channels).to(device)
-    load_state_dict_compat(teacher, teacher_ckpt)
+    teacher_state = load_state_dict_compat_dict(teacher_ckpt)
+    teacher_value_dim = infer_value_dim(teacher_state)
+    teacher = PretrainModel(
+        hidden_dim=hidden_dim,
+        use_vec=False,
+        in_channels=teacher_in_channels,
+        value_dim=teacher_value_dim,
+    ).to(device)
+    teacher.load_state_dict(teacher_state, strict=True)
     teacher.eval()
 
     student = PretrainModel(hidden_dim=hidden_dim, use_vec=True, in_channels=60).to(device)
@@ -79,6 +104,7 @@ def distill(
             student_vec = data["student_vec"]
             student_mask = data["student_mask"]
             actions = data["action"].astype(np.int64)
+            players = data["player"].astype(np.int64)
 
             idx = np.random.permutation(len(oracle_obs))
             for start in range(0, len(idx), batch_size):
@@ -88,6 +114,7 @@ def distill(
                 s_vec = torch.tensor(student_vec[batch_idx], dtype=torch.float32, device=device)
                 s_mask = torch.tensor(student_mask[batch_idx], dtype=torch.float32, device=device)
                 act_t = torch.tensor(actions[batch_idx], dtype=torch.long, device=device)
+                player_t = torch.tensor(players[batch_idx], dtype=torch.long, device=device)
 
                 with torch.no_grad():
                     t_logits, t_values = teacher(o_obs)
@@ -103,7 +130,11 @@ def distill(
                     soft_targets = F.softmax(t_logits / temperature, dim=1)
                     loss += soft_policy_weight * F.kl_div(log_probs, soft_targets, reduction="batchmean") * (temperature ** 2)
                 if value_weight > 0:
-                    loss += value_weight * F.mse_loss(s_values.squeeze(-1), t_values.squeeze(-1))
+                    if t_values.shape[-1] == 1:
+                        target_value = t_values.squeeze(-1)
+                    else:
+                        target_value = t_values.gather(1, player_t.unsqueeze(1)).squeeze(1)
+                    loss += value_weight * F.mse_loss(s_values.squeeze(-1), target_value)
 
                 optimizer.zero_grad()
                 loss.backward()

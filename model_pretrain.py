@@ -170,9 +170,10 @@ class PretrainModel(nn.Module):
     """
     改进版预训练模型
     """
-    def __init__(self, hidden_dim=512, use_vec=True, in_channels=60):
+    def __init__(self, hidden_dim=512, use_vec=True, in_channels=60, value_dim=1):
         super().__init__()
         self.use_vec = use_vec
+        self.value_dim = value_dim
         
         # -----------------------------------------------------------
         # 1. 初始特征压缩 (降维/特征筛选)
@@ -244,7 +245,7 @@ class PretrainModel(nn.Module):
         self.value_head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(inplace=True),
-            nn.Linear(hidden_dim // 2, 1)
+            nn.Linear(hidden_dim // 2, value_dim)
         )
 
         self._init_weights()
