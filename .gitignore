@@ -1,0 +1,5 @@
+data.txt
+*.pt
+__pycache__/
+.DS_Store
+botzone.log
