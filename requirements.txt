@@ -1,0 +1,21 @@
+# PyTorch相关（根据CUDA版本选择）
+# 访问 https://pytorch.org/get-started/locally/ 选择合适版本
+# 示例：CUDA 11.8
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
+
+# 数据处理
+numpy==1.24.3
+scipy
+
+# 训练工具
+tqdm
+wandb>=0.15.0
+tensorboard
+
+# 可视化
+matplotlib
+
+# MahjongGB（需要从源码安装，见setup.sh）
+# git+https://github.com/ailab-pku/PyMahjongGB.git
