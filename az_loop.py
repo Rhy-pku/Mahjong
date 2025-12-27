@@ -106,6 +106,7 @@ def default_config() -> Dict[str, Any]:
             "episodes": 200,
             "workers": max(1, cpu - 1),
             "device": "cuda",
+            "gpu_ids": [],
             "simulations": 64,
             "c_puct": 1.5,
             "reward_scale": 1.0,
@@ -328,10 +329,26 @@ def spawn_self_play(
     for i in range(episodes % workers):
         per_worker[i] += 1
 
+    def pick_worker_device(worker_id: int) -> str:
+        device = str(sp_cfg.get("device", "cpu"))
+        if not device.startswith("cuda"):
+            return device
+        if ":" in device:
+            return device
+        gpu_ids = sp_cfg.get("gpu_ids") or []
+        if gpu_ids:
+            return "cuda:%d" % gpu_ids[worker_id % len(gpu_ids)]
+        if torch.cuda.is_available():
+            count = torch.cuda.device_count()
+            if count > 0:
+                return "cuda:%d" % (worker_id % count)
+        return device
+
     def worker_cmd(worker_id: int, ep: int) -> Tuple[List[str], str]:
         out_dir = os.path.join(iter_dir, "worker_%d" % worker_id)
         os.makedirs(out_dir, exist_ok=True)
         progress_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.progress" % (iter_id, worker_id))
+        worker_device = pick_worker_device(worker_id)
         cmd = [
             sys.executable,
             "mcts_self_play.py",
@@ -340,7 +357,7 @@ def spawn_self_play(
             "--episodes",
             str(ep),
             "--device",
-            sp_cfg["device"],
+            worker_device,
             "--simulations",
             str(sp_cfg["simulations"]),
             "--c_puct",

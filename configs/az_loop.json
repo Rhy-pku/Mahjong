@@ -7,9 +7,10 @@
     "keep_models": 8
   },
   "self_play": {
-    "episodes": 2000,
-    "workers": 14,
+    "episodes": 256,
+    "workers": 16,
     "device": "cuda",
+    "gpu_ids": [0,1,2,3],
     "simulations": 256,
     "c_puct": 1.5,
     "reward_scale": 1.0,
@@ -23,7 +24,7 @@
     "top_k": 12,
     "min_actions": 6,
     "policy_mass": 0.95,
-    "leaf_batch_size": 16,
+    "leaf_batch_size": 64,
     "timeout_sec": 21600,
     "retries": 1,
     "wandb": true,
