@@ -33,6 +33,7 @@ TILE_LIST = [
 ]
 OFFSET_TILE = {c: i for i, c in enumerate(TILE_LIST)}
 STUDENT_CHANNELS = 60
+DRAW_PENALTY = -0.05
 
 
 def _tile_rc(tile):
@@ -201,6 +202,16 @@ def policy_actions(model, device, env, obs_dict, in_channels):
         for name, action in zip(batch_names, actions):
             action_dict[name] = int(action)
     return action_dict
+
+
+def policy_action_single(model, device, env, player, obs, in_channels):
+    oracle_obs = build_oracle_obs(env, player, obs["observation"], in_channels)
+    obs_t = _to_device(oracle_obs[None, ...], device)
+    mask_t = _to_device(obs["action_mask"][None, ...], device)
+    with torch.inference_mode():
+        logits, _ = model(obs_t)
+    masked_logits = _apply_action_mask(logits, mask_t)
+    return int(torch.argmax(masked_logits, dim=1).item())
 
 
 def policy_value(model, device, env, player, obs, in_channels, value_dim):
@@ -527,6 +538,9 @@ def self_play(
     progress_interval_sec=30,
     wandb_run=None,
     wandb_log_interval=10,
+    mcts_mode="all",
+    mcts_player=-1,
+    mcts_player_rotate=False,
 ):
     if seed is not None:
         random.seed(seed)
@@ -545,6 +559,18 @@ def self_play(
     in_channels = model.pre_conv[0].weight.shape[1]
     value_dim = model.value_head[-1].out_features
     rng = random.Random(seed)
+    mcts_mode = str(mcts_mode).strip().lower()
+    mcts_player = int(mcts_player)
+    mcts_player_rotate = bool(mcts_player_rotate)
+    if mcts_mode not in ("all", "single"):
+        raise ValueError("mcts_mode must be all or single, got %s" % mcts_mode)
+    if mcts_player >= 4 or mcts_player < -1:
+        raise ValueError("mcts_player must be -1 or in [0, 3], got %s" % mcts_player)
+    if mcts_mode == "single":
+        if mcts_player >= 0:
+            base_player = mcts_player
+        else:
+            base_player = (seed or 0) % 4
     samples = []
     file_idx = 0
     total_samples = 0
@@ -578,40 +604,50 @@ def self_play(
         episode_iter = range(episodes)
 
     for episode_idx in episode_iter:
+        if mcts_mode == "all":
+            mcts_player_id = -1
+        elif mcts_player_rotate:
+            mcts_player_id = (base_player + episode_idx) % 4
+        else:
+            mcts_player_id = base_player
         obs = env.reset()
         done = False
         rewards = None
         episode_samples = []
         while not done:
             if len(obs) == 1:
-                action, pi = mcts_action(
-                    env=env,
-                    obs_dict=obs,
-                    model=model,
-                    device=device,
-                    in_channels=in_channels,
-                    value_dim=value_dim,
-                    simulations=simulations,
-                    c_puct=c_puct,
-                    reward_scale=reward_scale,
-                    determinize=determinize,
-                    rng=rng,
-                    temperature=temperature,
-                    top_k=top_k,
-                    min_actions=min_actions,
-                    policy_mass=policy_mass,
-                    leaf_batch_size=leaf_batch_size,
-                )
                 name = next(iter(obs.keys()))
                 player = _player_from_name(name)
-                episode_samples.append(
-                    {
-                        "oracle_obs": build_oracle_obs(env, player, obs[name]["observation"], in_channels),
-                        "action_mask": obs[name]["action_mask"],
-                        "pi": pi,
-                        "player": player,
-                    }
-                )
+                use_mcts = (mcts_player_id < 0) or (player == mcts_player_id)
+                if use_mcts:
+                    action, pi = mcts_action(
+                        env=env,
+                        obs_dict=obs,
+                        model=model,
+                        device=device,
+                        in_channels=in_channels,
+                        value_dim=value_dim,
+                        simulations=simulations,
+                        c_puct=c_puct,
+                        reward_scale=reward_scale,
+                        determinize=determinize,
+                        rng=rng,
+                        temperature=temperature,
+                        top_k=top_k,
+                        min_actions=min_actions,
+                        policy_mass=policy_mass,
+                        leaf_batch_size=leaf_batch_size,
+                    )
+                    episode_samples.append(
+                        {
+                            "oracle_obs": build_oracle_obs(env, player, obs[name]["observation"], in_channels),
+                            "action_mask": obs[name]["action_mask"],
+                            "pi": pi,
+                            "player": player,
+                        }
+                    )
+                else:
+                    action = policy_action_single(model, device, env, player, obs[name], in_channels)
                 action_dict = {n: 0 for n in agent_names}
                 action_dict[name] = int(action)
             else:
@@ -630,16 +666,19 @@ def self_play(
         if any(r == -30 for r in reward_vals):
             invalid_count += 1
             continue
-        if all(r == 0 for r in reward_vals):
+        is_draw = all(r == 0 for r in reward_vals)
+        if is_draw:
             draw_count += 1
-            continue
-        max_reward = max(reward_vals)
-        if reward_vals.count(max_reward) == 1:
-            winner = agent_names[reward_vals.index(max_reward)]
-            win_counts[winner] += 1
+        else:
+            max_reward = max(reward_vals)
+            if reward_vals.count(max_reward) == 1:
+                winner = agent_names[reward_vals.index(max_reward)]
+                win_counts[winner] += 1
 
         if episode_samples:
             reward_vec = reward_to_vec(env, rewards, reward_scale)
+            if is_draw and DRAW_PENALTY:
+                reward_vec = reward_vec + DRAW_PENALTY
             for s in episode_samples:
                 s["reward_vec"] = reward_vec
             if out_dir:
@@ -737,6 +776,9 @@ def main():
     parser.add_argument("--wandb_project", default="mahjong-az", help="W&B project name")
     parser.add_argument("--wandb_run_name", default="", help="W&B run name")
     parser.add_argument("--wandb_log_interval", type=int, default=10, help="Log every N episodes")
+    parser.add_argument("--mcts_mode", default="all", help="MCTS mode: all or single")
+    parser.add_argument("--mcts_player", type=int, default=-1, help="MCTS player id (0-3), -1 for all players")
+    parser.add_argument("--mcts_player_rotate", action="store_true", help="Rotate MCTS player each episode")
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -771,6 +813,9 @@ def main():
                 "min_actions": args.min_actions,
                 "policy_mass": args.policy_mass,
                 "leaf_batch_size": args.leaf_batch_size,
+                "mcts_mode": args.mcts_mode,
+                "mcts_player": args.mcts_player,
+                "mcts_player_rotate": args.mcts_player_rotate,
             },
         )
 
@@ -796,6 +841,9 @@ def main():
         progress_interval_sec=args.progress_interval_sec,
         wandb_run=wandb_run,
         wandb_log_interval=args.wandb_log_interval,
+        mcts_mode=args.mcts_mode,
+        mcts_player=args.mcts_player,
+        mcts_player_rotate=args.mcts_player_rotate,
     )
 
     print("episodes:", args.episodes)

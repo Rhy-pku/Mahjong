@@ -121,6 +121,9 @@ def default_config() -> Dict[str, Any]:
             "min_actions": 6,
             "policy_mass": 0.95,
             "leaf_batch_size": 16,
+            "mcts_mode": "all",
+            "mcts_player": -1,
+            "mcts_player_rotate": False,
             "timeout_sec": 3600 * 6,
             "retries": 1,
             "wandb": False,
@@ -380,6 +383,10 @@ def spawn_self_play(
             str(sp_cfg.get("policy_mass", 0.95)),
             "--leaf_batch_size",
             str(sp_cfg.get("leaf_batch_size", 16)),
+            "--mcts_mode",
+            str(sp_cfg.get("mcts_mode", "all")),
+            "--mcts_player",
+            str(sp_cfg.get("mcts_player", -1)),
             "--out_dir",
             out_dir,
             "--save_every",
@@ -395,6 +402,8 @@ def spawn_self_play(
         ]
         if sp_cfg["determinize"]:
             cmd.append("--determinize")
+        if sp_cfg.get("mcts_player_rotate"):
+            cmd.append("--mcts_player_rotate")
         if sp_cfg.get("wandb"):
             cmd.append("--wandb")
             cmd += ["--wandb_project", sp_cfg["wandb_project"]]
