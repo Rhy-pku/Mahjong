@@ -40,3 +40,4 @@ Notes
 - self-play supports pruning via top_k/min_actions/policy_mass to speed up MCTS
 - self-play supports batched leaf eval via self_play.leaf_batch_size
 - self-play can round-robin GPUs via self_play.gpu_ids (e.g., [0,1,2,3])
+- train can use DDP via train.ddp=true and train.gpu_ids

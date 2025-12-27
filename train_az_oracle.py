@@ -11,7 +11,9 @@ import time
 
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, IterableDataset, get_worker_info
 
 try:
@@ -99,6 +101,9 @@ def train(
     progress_interval=50,
     amp=False,
     dataloader_timeout=0,
+    rank=0,
+    is_main=True,
+    ddp=False,
 ):
     files = _iter_files(data_dir)
     if not files:
@@ -114,6 +119,8 @@ def train(
         in_channels=in_channels,
         value_dim=value_dim,
     ).to(device)
+    if ddp:
+        model = DDP(model, device_ids=[device.index], output_device=device.index)
     model.train(True)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     scaler = torch.cuda.amp.GradScaler(enabled=amp and device.type == "cuda")
@@ -134,11 +141,14 @@ def train(
         % (len(files), total_samples, total_batches, steps_per_epoch)
     )
 
+    seed_offset = seed
+    if seed_offset is not None:
+        seed_offset = seed_offset + rank * 1000003
     dataset = RandomBatchDataset(
         files=files,
         file_sizes=file_sizes,
         batch_size=batch_size,
-        seed=seed,
+        seed=seed_offset,
     )
     loader = DataLoader(
         dataset,
@@ -157,7 +167,7 @@ def train(
         total_count = 0
         batch_idx_global = 0
         pbar = None
-        if tqdm is not None:
+        if tqdm is not None and is_main:
             pbar = tqdm(
                 total=steps_per_epoch,
                 desc="epoch %d/%d" % (epoch + 1, epochs),
@@ -208,7 +218,7 @@ def train(
                     policy="%.4f" % policy_loss.item(),
                     value="%.4f" % value_loss.item(),
                 )
-            elif batch_idx_global % progress_interval == 0:
+            elif is_main and progress_interval and batch_idx_global % progress_interval == 0:
                 print(
                     "epoch %d/%d batch %d/%d loss %.4f policy %.4f value %.4f"
                     % (
@@ -244,9 +254,28 @@ def train(
                 }
             )
 
-    if save_path:
-        torch.save(model.state_dict(), save_path)
+    if save_path and is_main:
+        state = model.module.state_dict() if ddp else model.state_dict()
+        torch.save(state, save_path)
         print("saved:", save_path)
+
+
+def _init_ddp(args):
+    ddp_requested = bool(args.ddp)
+    has_env = "RANK" in os.environ and "WORLD_SIZE" in os.environ
+    ddp_enabled = ddp_requested or has_env
+    if not ddp_enabled:
+        return False, 0, 1, 0
+    if not has_env:
+        raise RuntimeError("DDP requested but RANK/WORLD_SIZE not set. Use torchrun to launch.")
+    if not str(args.device).startswith("cuda"):
+        raise RuntimeError("DDP only supported on CUDA in this script.")
+    dist.init_process_group(backend=args.ddp_backend)
+    rank = int(os.environ["RANK"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    torch.cuda.set_device(local_rank)
+    return True, rank, world_size, local_rank
 
 
 def main():
@@ -272,10 +301,15 @@ def main():
     parser.add_argument("--wandb_project", default="mahjong-az", help="W&B project name")
     parser.add_argument("--wandb_run_name", default="", help="W&B run name")
     parser.add_argument("--wandb_log_interval", type=int, default=50, help="Log every N batches")
+    parser.add_argument("--ddp", action="store_true", help="Enable DDP (launch via torchrun)")
+    parser.add_argument("--ddp_backend", default="nccl", help="DDP backend")
     args = parser.parse_args()
 
+    ddp_enabled, rank, world_size, local_rank = _init_ddp(args)
+    is_main = rank == 0
+
     wandb_run = None
-    if args.wandb:
+    if args.wandb and is_main:
         import wandb
 
         wandb_run = wandb.init(
@@ -295,18 +329,21 @@ def main():
         )
 
     device = torch.device(args.device)
-    print(
-        "train config: data_dir=%s device=%s epochs=%d batch=%d lr=%.6f workers=%d reward_scale=%.2f"
-        % (
-            args.data_dir,
-            args.device,
-            args.epochs,
-            args.batch_size,
-            args.lr,
-            args.num_workers,
-            args.reward_scale,
+    if ddp_enabled:
+        device = torch.device("cuda:%d" % local_rank)
+    if is_main:
+        print(
+            "train config: data_dir=%s device=%s epochs=%d batch=%d lr=%.6f workers=%d reward_scale=%.2f"
+            % (
+                args.data_dir,
+                str(device),
+                args.epochs,
+                args.batch_size,
+                args.lr,
+                args.num_workers,
+                args.reward_scale,
+            )
         )
-    )
     train(
         data_dir=args.data_dir,
         device=device,
@@ -327,10 +364,15 @@ def main():
         progress_interval=args.progress_interval,
         amp=args.amp,
         dataloader_timeout=args.dataloader_timeout,
+        rank=rank,
+        is_main=is_main,
+        ddp=ddp_enabled,
     )
 
     if wandb_run:
         wandb_run.finish()
+    if ddp_enabled:
+        dist.destroy_process_group()
 
 
 if __name__ == "__main__":

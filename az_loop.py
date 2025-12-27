@@ -144,6 +144,9 @@ def default_config() -> Dict[str, Any]:
             "dataloader_timeout": 0,
             "timeout_sec": 3600 * 6,
             "retries": 1,
+            "ddp": False,
+            "ddp_backend": "nccl",
+            "gpu_ids": [],
             "wandb": False,
             "wandb_project": "mahjong-az",
             "wandb_run_name": "",
@@ -225,6 +228,7 @@ def run_command(
     timeout_sec: int,
     retries: int,
     stage: str,
+    env_override: Optional[Dict[str, str]] = None,
 ) -> None:
     for attempt in range(retries + 1):
         log("run %s (attempt %d/%d): %s" % (stage, attempt + 1, retries + 1, " ".join(cmd)))
@@ -233,6 +237,8 @@ def run_command(
             f.write("[%s] CMD: %s\n" % (_now(), " ".join(cmd)))
             f.flush()
             env = os.environ.copy()
+            if env_override:
+                env.update(env_override)
             env["PYTHONUNBUFFERED"] = "1"
             proc = subprocess.Popen(
                 cmd,
@@ -472,7 +478,6 @@ def train_candidate(
     tr_cfg = cfg["train"]
     candidate_path = os.path.join(paths["candidates"], "iter_%04d.pt" % iter_id)
     cmd = [
-        sys.executable,
         "train_az_oracle.py",
         "--data_dir",
         mix_dir,
@@ -515,8 +520,36 @@ def train_candidate(
         if tr_cfg.get("wandb_run_name"):
             cmd += ["--wandb_run_name", tr_cfg["wandb_run_name"]]
         cmd += ["--wandb_log_interval", str(tr_cfg["wandb_log_interval"])]
+    env_override = None
+    use_ddp = bool(tr_cfg.get("ddp")) and str(tr_cfg.get("device", "")).startswith("cuda")
+    if use_ddp:
+        gpu_ids = tr_cfg.get("gpu_ids") or []
+        if gpu_ids:
+            nproc = len(gpu_ids)
+        elif torch.cuda.is_available():
+            nproc = torch.cuda.device_count()
+        else:
+            nproc = 0
+        if nproc > 1:
+            cmd = [
+                sys.executable,
+                "-m",
+                "torch.distributed.run",
+                "--nproc_per_node",
+                str(nproc),
+                cmd[0],
+                "--ddp",
+                "--ddp_backend",
+                str(tr_cfg.get("ddp_backend", "nccl")),
+            ] + cmd[1:]
+            if gpu_ids:
+                env_override = {"CUDA_VISIBLE_DEVICES": ",".join(str(i) for i in gpu_ids)}
+        else:
+            use_ddp = False
+    if not use_ddp:
+        cmd = [sys.executable] + cmd
     log_path = os.path.join(paths["logs"], "train_iter_%04d.log" % iter_id)
-    run_command(cmd, log_path, tr_cfg["timeout_sec"], tr_cfg["retries"], "train")
+    run_command(cmd, log_path, tr_cfg["timeout_sec"], tr_cfg["retries"], "train", env_override)
     return candidate_path
 
 
