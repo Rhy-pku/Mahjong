@@ -411,6 +411,8 @@ def spawn_self_play(
             str(sp_cfg["c_puct"]),
             "--reward_scale",
             str(sp_cfg["reward_scale"]),
+            "--value_scale",
+            str(sp_cfg.get("value_scale", 1.0)),
             "--temperature",
             str(sp_cfg["temperature"]),
             "--top_k",
@@ -442,6 +444,25 @@ def spawn_self_play(
             "--seed",
             str(cfg["seed"] + iter_id * 1000 + worker_id),
         ]
+        debug_worker = sp_cfg.get("debug_log_worker", -1)
+        if debug_worker is not None and int(debug_worker) == worker_id:
+            debug_episode = int(sp_cfg.get("debug_log_episode", 0))
+            debug_topk = int(sp_cfg.get("debug_log_topk", 0))
+            debug_path = sp_cfg.get("debug_log_path")
+            if debug_path:
+                debug_path = debug_path.format(iter_id=iter_id, worker_id=worker_id)
+            else:
+                debug_path = os.path.join(paths["logs"], "selfplay_debug_iter_%04d_worker_%d.jsonl" % (iter_id, worker_id))
+            cmd += [
+                "--debug_log_path",
+                debug_path,
+                "--debug_log_episode",
+                str(debug_episode),
+                "--debug_log_topk",
+                str(debug_topk),
+            ]
+            if sp_cfg.get("debug_log_obs"):
+                cmd.append("--debug_log_obs")
         if sp_cfg["determinize"]:
             cmd.append("--determinize")
         if sp_cfg.get("mcts_player_rotate"):

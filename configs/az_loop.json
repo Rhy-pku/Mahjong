@@ -1,5 +1,5 @@
 {
-  "seed": 2025,
+  "seed": 4096,
   "max_iters": 1000000,
   "data_window": 6,
   "cleanup": {
@@ -7,21 +7,22 @@
     "keep_models": 8
   },
   "self_play": {
-    "episodes": 128,
+    "episodes": 256,
     "workers": 32,
     "device": "cuda",
     "gpu_ids": [0,1,2,3],
     "simulations": 256,
     "c_puct": 1.4,
-    "reward_scale": 100.0,
-    "determinize": true,
-    "temperature": 1,
+    "reward_scale": 1.0,
+    "determinize": false,
+    "temperature": 0,
     "temperature_drop_iter": 10,
     "save_every": 1024,
     "log_interval": 5,
     "progress_interval_sec": 60,
     "worker_progress_interval_sec": 30,
-    "top_k": 12,
+    "top_k": 0,
+    "value_scale": 300,
     "min_actions": 8,
     "policy_mass": 0.95,
     "leaf_batch_size": 512,
@@ -29,7 +30,7 @@
     "mcts_player": -1,
 
     "mcts_players": [0, 2],
-    "start_wall_limit": 36,
+    "start_wall_limit": 0,
 
     
     "mcts_player_rotate": false,
