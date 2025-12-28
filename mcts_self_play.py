@@ -6,6 +6,7 @@ Minimal MCTS self-play for oracle teacher.
 
 import argparse
 import copy
+import json
 import math
 import os
 import random
@@ -74,6 +75,15 @@ def _remaining_counts(env):
         for tile in wall:
             counts[tile] += 1
     return counts
+
+
+def _remaining_wall_tiles(env):
+    wall = getattr(env, "tileWall", None)
+    if not wall:
+        return 0
+    if isinstance(wall, list) and wall and isinstance(wall[0], list):
+        return sum(len(sub) for sub in wall)
+    return len(wall)
 
 
 def build_oracle_obs(env, player, student_obs, in_channels):
@@ -202,6 +212,36 @@ def policy_actions(model, device, env, obs_dict, in_channels):
         for name, action in zip(batch_names, actions):
             action_dict[name] = int(action)
     return action_dict
+
+
+def _parse_mcts_players(raw):
+    if raw is None:
+        return []
+    if isinstance(raw, (list, tuple)):
+        return [int(x) for x in raw]
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        if s.startswith("[") and s.endswith("]"):
+            try:
+                data = json.loads(s)
+                return [int(x) for x in data]
+            except Exception:
+                return []
+        parts = [p.strip() for p in s.split(",") if p.strip()]
+        return [int(p) for p in parts]
+    return [int(raw)]
+
+
+def _normalize_mcts_players(players):
+    uniq = []
+    for p in players:
+        if p < 0 or p > 3:
+            raise ValueError("mcts_players must be in [0, 3], got %s" % p)
+        if p not in uniq:
+            uniq.append(p)
+    return uniq
 
 
 def policy_action_single(model, device, env, player, obs, in_channels):
@@ -536,11 +576,14 @@ def self_play(
     log_interval,
     progress_path=None,
     progress_interval_sec=30,
+    summary_path=None,
     wandb_run=None,
     wandb_log_interval=10,
     mcts_mode="all",
     mcts_player=-1,
     mcts_player_rotate=False,
+    mcts_players=None,
+    start_wall_limit=0,
 ):
     if seed is not None:
         random.seed(seed)
@@ -553,6 +596,9 @@ def self_play(
     agent_names = env.agent_names
     total_scores = {name: 0.0 for name in agent_names}
     win_counts = {name: 0 for name in agent_names}
+    mcts_win_count = 0
+    non_mcts_win_count = 0
+    mcts_episode_count = 0
     draw_count = 0
     invalid_count = 0
 
@@ -562,8 +608,9 @@ def self_play(
     mcts_mode = str(mcts_mode).strip().lower()
     mcts_player = int(mcts_player)
     mcts_player_rotate = bool(mcts_player_rotate)
-    if mcts_mode not in ("all", "single"):
-        raise ValueError("mcts_mode must be all or single, got %s" % mcts_mode)
+    start_wall_limit = int(start_wall_limit)
+    if mcts_mode not in ("all", "single", "subset"):
+        raise ValueError("mcts_mode must be all, single, or subset, got %s" % mcts_mode)
     if mcts_player >= 4 or mcts_player < -1:
         raise ValueError("mcts_player must be -1 or in [0, 3], got %s" % mcts_player)
     if mcts_mode == "single":
@@ -571,6 +618,12 @@ def self_play(
             base_player = mcts_player
         else:
             base_player = (seed or 0) % 4
+    if mcts_mode == "subset":
+        base_players = _normalize_mcts_players(_parse_mcts_players(mcts_players))
+        if not base_players:
+            raise ValueError("mcts_mode=subset requires mcts_players")
+        base_players = list(base_players)
+        rotate_offset = (seed or 0) % 4
     samples = []
     file_idx = 0
     total_samples = 0
@@ -580,9 +633,15 @@ def self_play(
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
+    if mcts_mode == "subset":
+        players_repr = ",".join(str(p) for p in base_players)
+    elif mcts_mode == "single":
+        players_repr = str(base_player)
+    else:
+        players_repr = "all"
     print(
         "self-play config: episodes=%d sims=%d c_puct=%.3f determinize=%s temp=%.3f top_k=%s min_actions=%d "
-        "policy_mass=%.2f leaf_batch=%d out_dir=%s"
+        "policy_mass=%.2f leaf_batch=%d out_dir=%s mcts_mode=%s mcts_players=%s start_wall_limit=%d"
         % (
             episodes,
             simulations,
@@ -594,6 +653,9 @@ def self_play(
             policy_mass,
             leaf_batch_size,
             out_dir or "None",
+            mcts_mode,
+            players_repr,
+            start_wall_limit,
         )
     )
     pbar = None
@@ -605,21 +667,34 @@ def self_play(
 
     for episode_idx in episode_iter:
         if mcts_mode == "all":
-            mcts_player_id = -1
-        elif mcts_player_rotate:
-            mcts_player_id = (base_player + episode_idx) % 4
+            mcts_player_ids = [0, 1, 2, 3]
+        elif mcts_mode == "single":
+            if mcts_player_rotate:
+                mcts_player_ids = [(base_player + episode_idx) % 4]
+            else:
+                mcts_player_ids = [base_player]
         else:
-            mcts_player_id = base_player
+            if mcts_player_rotate:
+                offset = (rotate_offset + episode_idx) % 4
+                mcts_player_ids = [(p + offset) % 4 for p in base_players]
+            else:
+                mcts_player_ids = list(base_players)
         obs = env.reset()
         done = False
         rewards = None
         episode_samples = []
+        mcts_used_in_episode = False
         while not done:
+            if start_wall_limit > 0:
+                mcts_active = _remaining_wall_tiles(env) <= start_wall_limit
+            else:
+                mcts_active = True
             if len(obs) == 1:
                 name = next(iter(obs.keys()))
                 player = _player_from_name(name)
-                use_mcts = (mcts_player_id < 0) or (player == mcts_player_id)
+                use_mcts = mcts_active and (player in mcts_player_ids)
                 if use_mcts:
+                    mcts_used_in_episode = True
                     action, pi = mcts_action(
                         env=env,
                         obs_dict=obs,
@@ -674,6 +749,13 @@ def self_play(
             if reward_vals.count(max_reward) == 1:
                 winner = agent_names[reward_vals.index(max_reward)]
                 win_counts[winner] += 1
+                if mcts_used_in_episode:
+                    mcts_episode_count += 1
+                    winner_player = _player_from_name(winner)
+                    if winner_player in mcts_player_ids:
+                        mcts_win_count += 1
+                    else:
+                        non_mcts_win_count += 1
 
         if episode_samples:
             reward_vec = reward_to_vec(env, rewards, reward_scale)
@@ -702,14 +784,22 @@ def self_play(
         if log_interval and ((episode_idx + 1) % log_interval == 0):
             elapsed = time.time() - start_time
             avg_ep_time = elapsed / max(episode_idx + 1, 1)
+            denom = max(mcts_episode_count, 1)
+            win_rates = {
+                "mcts": mcts_win_count / denom,
+                "non_mcts": non_mcts_win_count / denom,
+            }
             print(
-                "episode %d/%d steps=%d samples=%d wins=%s draws=%d invalid=%d avg_ep=%.2fs"
+                "episode %d/%d steps=%d samples=%d mcts_ep=%d wins_mcts=%d wins_non_mcts=%d win_rates=%s draws=%d invalid=%d avg_ep=%.2fs"
                 % (
                     episode_idx + 1,
                     episodes,
                     len(episode_samples),
                     total_samples,
-                    win_counts,
+                    mcts_episode_count,
+                    mcts_win_count,
+                    non_mcts_win_count,
+                    win_rates,
                     draw_count,
                     invalid_count,
                     avg_ep_time,
@@ -718,6 +808,7 @@ def self_play(
 
         if wandb_run and ((episode_idx + 1) % wandb_log_interval == 0):
             win_rates = {name: win_counts[name] / max(episode_idx + 1, 1) for name in agent_names}
+            denom = max(mcts_episode_count, 1)
             wandb_run.log(
                 {
                     "episode": episode_idx + 1,
@@ -729,11 +820,18 @@ def self_play(
                     "win_rate/player_2": win_rates.get("player_2", 0.0),
                     "win_rate/player_3": win_rates.get("player_3", 0.0),
                     "win_rate/player_4": win_rates.get("player_4", 0.0),
+                    "mcts/episodes": mcts_episode_count,
+                    "win_rate/mcts": mcts_win_count / denom,
+                    "win_rate/non_mcts": non_mcts_win_count / denom,
                 }
             )
 
         if pbar is not None:
-            pbar.set_postfix(samples=total_samples, draws=draw_count, invalid=invalid_count)
+            denom = max(mcts_episode_count, 1)
+            mcts_rate = mcts_win_count / denom
+            non_mcts_rate = non_mcts_win_count / denom
+            win_rate_str = "%.2f/%.2f" % (mcts_rate, non_mcts_rate)
+            pbar.set_postfix(samples=total_samples, draws=draw_count, invalid=invalid_count, win=win_rate_str, mcts_ep=mcts_episode_count)
 
     win_rates = {name: win_counts[name] / episodes for name in agent_names}
     if out_dir and samples:
@@ -743,6 +841,23 @@ def self_play(
             os.makedirs(os.path.dirname(progress_path), exist_ok=True)
             with open(progress_path, "w", encoding="utf-8") as f:
                 f.write(str(episodes))
+        except Exception:
+            pass
+    if summary_path:
+        try:
+            os.makedirs(os.path.dirname(summary_path), exist_ok=True)
+            with open(summary_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "episodes": episodes,
+                        "mcts_episodes": mcts_episode_count,
+                        "mcts_wins": mcts_win_count,
+                        "non_mcts_wins": non_mcts_win_count,
+                        "draws": draw_count,
+                        "invalid": invalid_count,
+                    },
+                    f,
+                )
         except Exception:
             pass
     if pbar is not None:
@@ -772,13 +887,16 @@ def main():
     parser.add_argument("--log_interval", type=int, default=1, help="Print every N episodes")
     parser.add_argument("--progress_path", default="", help="Write completed episodes to this file")
     parser.add_argument("--progress_interval_sec", type=int, default=30, help="Progress write interval (sec)")
+    parser.add_argument("--summary_path", default="", help="Write summary stats to this file")
     parser.add_argument("--wandb", action="store_true", help="Enable Weights & Biases logging")
     parser.add_argument("--wandb_project", default="mahjong-az", help="W&B project name")
     parser.add_argument("--wandb_run_name", default="", help="W&B run name")
     parser.add_argument("--wandb_log_interval", type=int, default=10, help="Log every N episodes")
-    parser.add_argument("--mcts_mode", default="all", help="MCTS mode: all or single")
+    parser.add_argument("--mcts_mode", default="all", help="MCTS mode: all, single, or subset")
     parser.add_argument("--mcts_player", type=int, default=-1, help="MCTS player id (0-3), -1 for all players")
     parser.add_argument("--mcts_player_rotate", action="store_true", help="Rotate MCTS player each episode")
+    parser.add_argument("--mcts_players", default="", help="Comma list of MCTS players for subset mode")
+    parser.add_argument("--start_wall_limit", type=int, default=0, help="Use MCTS only when remaining tiles <= this")
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -816,6 +934,8 @@ def main():
                 "mcts_mode": args.mcts_mode,
                 "mcts_player": args.mcts_player,
                 "mcts_player_rotate": args.mcts_player_rotate,
+                "mcts_players": args.mcts_players,
+                "start_wall_limit": args.start_wall_limit,
             },
         )
 
@@ -839,11 +959,14 @@ def main():
         log_interval=args.log_interval,
         progress_path=args.progress_path.strip() or None,
         progress_interval_sec=args.progress_interval_sec,
+        summary_path=args.summary_path.strip() or None,
         wandb_run=wandb_run,
         wandb_log_interval=args.wandb_log_interval,
         mcts_mode=args.mcts_mode,
         mcts_player=args.mcts_player,
         mcts_player_rotate=args.mcts_player_rotate,
+        mcts_players=args.mcts_players,
+        start_wall_limit=args.start_wall_limit,
     )
 
     print("episodes:", args.episodes)

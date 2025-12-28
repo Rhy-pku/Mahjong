@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 AlphaZero training loop for oracle teacher (self-play -> train -> arena -> accept/rollback).
+python az_loop.py --run_name exp01 --config configs/az_loop.json --init_model teacher_initial.pt
 """
 
 from __future__ import annotations
@@ -124,6 +125,8 @@ def default_config() -> Dict[str, Any]:
             "mcts_mode": "all",
             "mcts_player": -1,
             "mcts_player_rotate": False,
+            "mcts_players": [],
+            "start_wall_limit": 0,
             "timeout_sec": 3600 * 6,
             "retries": 1,
             "wandb": False,
@@ -142,6 +145,7 @@ def default_config() -> Dict[str, Any]:
             "num_workers": max(1, cpu // 2),
             "prefetch_factor": 2,
             "steps_per_epoch": None,
+            "replay_buffer_samples": None,
             "seed": None,
             "amp": True,
             "dataloader_timeout": 0,
@@ -284,6 +288,11 @@ def count_npz_samples(dir_path: str) -> int:
     return total
 
 
+def npz_sample_count(path: str) -> int:
+    with np.load(path, mmap_mode="r") as data:
+        return int(data["oracle_obs"].shape[0])
+
+
 def count_npz_files(dir_path: str) -> Tuple[int, float]:
     total_files = 0
     total_bytes = 0
@@ -313,6 +322,31 @@ def read_worker_progress(paths: Dict[str, str], iter_id: int, workers: int) -> T
         except Exception:
             continue
     return total, done
+
+
+def read_worker_summary(paths: Dict[str, str], iter_id: int, workers: int) -> Dict[str, int]:
+    totals = {
+        "episodes": 0,
+        "mcts_episodes": 0,
+        "mcts_wins": 0,
+        "non_mcts_wins": 0,
+        "draws": 0,
+        "invalid": 0,
+    }
+    for worker_id in range(workers):
+        summary_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.summary.json" % (iter_id, worker_id))
+        if not os.path.exists(summary_path):
+            continue
+        try:
+            data = read_json(summary_path)
+        except Exception:
+            continue
+        for key in totals:
+            try:
+                totals[key] += int(data.get(key, 0))
+            except Exception:
+                continue
+    return totals
 
 
 def ensure_clean_dir(path: str) -> None:
@@ -357,6 +391,7 @@ def spawn_self_play(
         out_dir = os.path.join(iter_dir, "worker_%d" % worker_id)
         os.makedirs(out_dir, exist_ok=True)
         progress_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.progress" % (iter_id, worker_id))
+        summary_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.summary.json" % (iter_id, worker_id))
         worker_device = pick_worker_device(worker_id)
         cmd = [
             sys.executable,
@@ -387,6 +422,8 @@ def spawn_self_play(
             str(sp_cfg.get("mcts_mode", "all")),
             "--mcts_player",
             str(sp_cfg.get("mcts_player", -1)),
+            "--start_wall_limit",
+            str(sp_cfg.get("start_wall_limit", 0)),
             "--out_dir",
             out_dir,
             "--save_every",
@@ -397,6 +434,8 @@ def spawn_self_play(
             progress_path,
             "--progress_interval_sec",
             str(sp_cfg.get("worker_progress_interval_sec", 30)),
+            "--summary_path",
+            summary_path,
             "--seed",
             str(cfg["seed"] + iter_id * 1000 + worker_id),
         ]
@@ -404,6 +443,13 @@ def spawn_self_play(
             cmd.append("--determinize")
         if sp_cfg.get("mcts_player_rotate"):
             cmd.append("--mcts_player_rotate")
+        mcts_players = sp_cfg.get("mcts_players")
+        if mcts_players:
+            if isinstance(mcts_players, (list, tuple)):
+                mcts_players_arg = ",".join(str(p) for p in mcts_players)
+            else:
+                mcts_players_arg = str(mcts_players)
+            cmd += ["--mcts_players", mcts_players_arg]
         if sp_cfg.get("wandb"):
             cmd.append("--wandb")
             cmd += ["--wandb_project", sp_cfg["wandb_project"]]
@@ -457,24 +503,65 @@ def spawn_self_play(
             time.sleep(1)
 
     total_samples = count_npz_samples(iter_dir)
+    summary = read_worker_summary(paths, iter_id, workers)
+    mcts_ep = summary.get("mcts_episodes", 0)
+    denom = max(mcts_ep, 1)
+    mcts_rate = summary.get("mcts_wins", 0) / denom
+    non_mcts_rate = summary.get("non_mcts_wins", 0) / denom
+    log(
+        "self-play summary: episodes=%d mcts_ep=%d wins_mcts=%d wins_non_mcts=%d win=%.3f/%.3f draws=%d invalid=%d"
+        % (
+            summary.get("episodes", 0),
+            mcts_ep,
+            summary.get("mcts_wins", 0),
+            summary.get("non_mcts_wins", 0),
+            mcts_rate,
+            non_mcts_rate,
+            summary.get("draws", 0),
+            summary.get("invalid", 0),
+        )
+    )
     log("self-play done: iter=%d total_samples=%d data_dir=%s" % (iter_id, total_samples, iter_dir))
     return iter_dir
 
 
-def build_mix_dir(paths: Dict[str, str], iter_id: int, data_iters: List[int]) -> str:
+def build_mix_dir(
+    paths: Dict[str, str],
+    iter_id: int,
+    data_iters: List[int],
+    max_samples: Optional[int] = None,
+) -> str:
     mix_dir = os.path.join(paths["data"], "mix_iter_%04d" % iter_id)
     ensure_clean_dir(mix_dir)
     counter = 0
-    for it in data_iters:
+    kept_samples = 0
+    if max_samples is not None and max_samples <= 0:
+        max_samples = None
+    iter_order = list(data_iters)
+    if max_samples is not None:
+        iter_order = list(reversed(iter_order))
+    for it in iter_order:
         data_dir = os.path.join(paths["data"], "iter_%04d" % it)
-        for src in list_npz_files(data_dir):
+        files = list_npz_files(data_dir)
+        if max_samples is not None:
+            files = list(reversed(files))
+        for src in files:
+            if max_samples is not None and kept_samples >= max_samples:
+                break
+            try:
+                sample_count = npz_sample_count(src)
+            except Exception:
+                sample_count = 0
             dst = os.path.join(mix_dir, "iter_%04d_%08d.npz" % (it, counter))
             try:
                 os.link(src, dst)
             except Exception:
                 os.symlink(src, dst)
             counter += 1
-    log("mix data: %d iters -> %d files" % (len(data_iters), counter))
+            kept_samples += sample_count
+        if max_samples is not None and kept_samples >= max_samples:
+            break
+    log("mix data: %d iters -> %d files samples=%d" % (len(data_iters), counter, kept_samples))
     return mix_dir
 
 
@@ -918,7 +1005,7 @@ def main() -> None:
 
             iter_dir = spawn_self_play(cfg, paths, iter_id, state["best_model"])
             data_iters = list(range(max(1, iter_id - cfg["data_window"] + 1), iter_id + 1))
-            mix_dir = build_mix_dir(paths, iter_id, data_iters)
+            mix_dir = build_mix_dir(paths, iter_id, data_iters, cfg["train"].get("replay_buffer_samples"))
             cand_path = train_candidate(cfg, paths, iter_id, mix_dir)
             shutil.rmtree(mix_dir, ignore_errors=True)
 
