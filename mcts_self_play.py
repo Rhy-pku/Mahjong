@@ -368,6 +368,7 @@ def _simulate_to_leaf(
     top_k,
     min_actions,
     policy_mass,
+    mcts_player_ids,
 ):
     path = []
     node = root
@@ -392,7 +393,11 @@ def _simulate_to_leaf(
         if not node.expanded:
             return "leaf", (node, path, player, obs, env)
 
-        action = node.select(player, c_puct, top_k, min_actions, policy_mass)
+        use_mcts = mcts_player_ids is None or player in mcts_player_ids
+        if use_mcts:
+            action = node.select(player, c_puct, top_k, min_actions, policy_mass)
+        else:
+            action = int(np.argmax(node.prior))
         path.append((node, action))
         child = node.children.get(action)
         if child is None:
@@ -466,6 +471,7 @@ def mcts_action(
     min_actions,
     policy_mass,
     leaf_batch_size,
+    mcts_player_ids=None,
 ):
     name, obs = next(iter(obs_dict.items()))
     action_size = obs["action_mask"].shape[0]
@@ -477,6 +483,8 @@ def mcts_action(
     root = MCTSNode(action_size, value_dim)
     leaf_batch = []
     leaf_batch_size = max(1, int(leaf_batch_size))
+    if mcts_player_ids is not None:
+        mcts_player_ids = set(mcts_player_ids)
     for _ in range(simulations):
         env_copy = _clone_env(env)
         if determinize:
@@ -495,6 +503,7 @@ def mcts_action(
             top_k,
             min_actions,
             policy_mass,
+            mcts_player_ids,
         )
         if kind == "terminal":
             value_vec, path = payload
@@ -717,6 +726,7 @@ def self_play(
                         min_actions=min_actions,
                         policy_mass=policy_mass,
                         leaf_batch_size=leaf_batch_size,
+                        mcts_player_ids=mcts_player_ids,
                     )
                     episode_samples.append(
                         {
