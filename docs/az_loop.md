@@ -36,6 +36,8 @@ Notes
 - arena uses score mean + confidence interval by default
 - train uses reward_scale (default 100.0); if your self-play data is already scaled, set train.reward_scale=1
 - train can cap replay buffer size by samples via train.replay_buffer_samples (None disables)
+- train can use cosine LR via train.lr_schedule=cosine with train.lr_min and train.warmup_steps
+- train DDP uses train.ddp_master_port to avoid port conflicts when multiple runs are active
 - self-play prints periodic progress (npz count and size) via self_play.progress_interval_sec
 - per-worker progress is aggregated via self_play.worker_progress_interval_sec
 - self-play supports pruning via top_k/min_actions/policy_mass to speed up MCTS
@@ -43,4 +45,6 @@ Notes
 - self-play can round-robin GPUs via self_play.gpu_ids (e.g., [0,1,2,3])
 - self-play can choose MCTS mode via self_play.mcts_mode (all|single|subset); in subset mode, use self_play.mcts_players and self_play.mcts_player_rotate
 - self-play can delay MCTS until late game via self_play.start_wall_limit (remaining wall tiles)
+- self-play can enable forced playouts via self_play.forced_playout_k and prune policy targets via self_play.policy_prune_min_visits
+- self-play can add root Dirichlet noise via self_play.root_dirichlet_alpha and self_play.root_exploration_fraction
 - train can use DDP via train.ddp=true and train.gpu_ids

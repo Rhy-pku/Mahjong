@@ -668,17 +668,22 @@ def self_play(
     for episode_idx in episode_iter:
         if mcts_mode == "all":
             mcts_player_ids = [0, 1, 2, 3]
+            rotation_offset = 0
         elif mcts_mode == "single":
             if mcts_player_rotate:
                 mcts_player_ids = [(base_player + episode_idx) % 4]
+                rotation_offset = episode_idx % 4
             else:
                 mcts_player_ids = [base_player]
+                rotation_offset = 0
         else:
             if mcts_player_rotate:
                 offset = (rotate_offset + episode_idx) % 4
                 mcts_player_ids = [(p + offset) % 4 for p in base_players]
+                rotation_offset = offset
             else:
                 mcts_player_ids = list(base_players)
+                rotation_offset = 0
         obs = env.reset()
         done = False
         rewards = None
@@ -748,11 +753,15 @@ def self_play(
             max_reward = max(reward_vals)
             if reward_vals.count(max_reward) == 1:
                 winner = agent_names[reward_vals.index(max_reward)]
-                win_counts[winner] += 1
+                orig_winner_player = _player_from_name(winner)
+                winner_player = orig_winner_player
+                if rotation_offset:
+                    winner_player = (winner_player - rotation_offset) % 4
+                winner_key = "player_%d" % (winner_player + 1)
+                win_counts[winner_key] += 1
                 if mcts_used_in_episode:
                     mcts_episode_count += 1
-                    winner_player = _player_from_name(winner)
-                    if winner_player in mcts_player_ids:
+                    if orig_winner_player in mcts_player_ids:
                         mcts_win_count += 1
                     else:
                         non_mcts_win_count += 1

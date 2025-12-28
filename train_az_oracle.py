@@ -88,6 +88,9 @@ def train(
     epochs,
     batch_size,
     lr,
+    lr_schedule,
+    lr_min,
+    warmup_steps,
     value_weight,
     policy_weight,
     reward_scale,
@@ -135,6 +138,7 @@ def train(
     total_batches = sum((size + batch_size - 1) // batch_size for size in file_sizes)
     if steps_per_epoch is None:
         steps_per_epoch = total_batches
+    total_steps = int(epochs) * int(steps_per_epoch)
 
     print(
         "dataset: files=%d total_samples=%d batches=%d steps_per_epoch=%d"
@@ -159,6 +163,18 @@ def train(
         persistent_workers=bool(num_workers),
         timeout=dataloader_timeout,
     )
+
+    scheduler = None
+    lr_schedule = str(lr_schedule or "constant").strip().lower()
+    warmup_steps = max(int(warmup_steps or 0), 0)
+    if lr_schedule == "cosine":
+        sched_steps = max(total_steps - warmup_steps, 1)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=sched_steps,
+            eta_min=float(lr_min),
+        )
+    global_step = 0
 
     for epoch in range(epochs):
         total_loss = 0.0
@@ -195,6 +211,12 @@ def train(
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
+            if warmup_steps and global_step < warmup_steps:
+                scale = float(global_step + 1) / float(warmup_steps)
+                for group in optimizer.param_groups:
+                    group["lr"] = lr * scale
+            elif scheduler is not None:
+                scheduler.step()
 
             batch_size_actual = obs_t.shape[0]
             total_loss += loss.item() * batch_size_actual
@@ -203,24 +225,29 @@ def train(
             total_count += batch_size_actual
 
             if wandb_run and (batch_idx_global % wandb_log_interval == 0):
+                cur_lr = optimizer.param_groups[0]["lr"]
                 wandb_run.log(
                     {
                         "train/loss": loss.item(),
                         "train/policy_loss": policy_loss.item(),
                         "train/value_loss": value_loss.item(),
+                        "train/lr": cur_lr,
                         "epoch": epoch + 1,
                     }
                 )
             if pbar is not None:
+                cur_lr = optimizer.param_groups[0]["lr"]
                 pbar.update(1)
                 pbar.set_postfix(
                     loss="%.4f" % loss.item(),
                     policy="%.4f" % policy_loss.item(),
                     value="%.4f" % value_loss.item(),
+                    lr="%.2e" % cur_lr,
                 )
             elif is_main and progress_interval and batch_idx_global % progress_interval == 0:
+                cur_lr = optimizer.param_groups[0]["lr"]
                 print(
-                    "epoch %d/%d batch %d/%d loss %.4f policy %.4f value %.4f"
+                    "epoch %d/%d batch %d/%d loss %.4f policy %.4f value %.4f lr %.2e"
                     % (
                         epoch + 1,
                         epochs,
@@ -229,9 +256,11 @@ def train(
                         loss.item(),
                         policy_loss.item(),
                         value_loss.item(),
+                        cur_lr,
                     )
                 )
             batch_idx_global += 1
+            global_step += 1
             if batch_idx_global >= steps_per_epoch:
                 break
         if pbar is not None:
@@ -286,6 +315,9 @@ def main():
     parser.add_argument("--epochs", type=int, default=5, help="Epochs")
     parser.add_argument("--batch_size", type=int, default=256, help="Batch size")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+    parser.add_argument("--lr_schedule", default="constant", help="LR schedule: constant or cosine")
+    parser.add_argument("--lr_min", type=float, default=0.0, help="Minimum LR for cosine schedule")
+    parser.add_argument("--warmup_steps", type=int, default=0, help="Warmup steps before scheduling")
     parser.add_argument("--value_weight", type=float, default=1.0, help="Value loss weight")
     parser.add_argument("--policy_weight", type=float, default=1.0, help="Policy loss weight")
     parser.add_argument("--reward_scale", type=float, default=100.0, help="Divide rewards by this value")
@@ -320,6 +352,9 @@ def main():
                 "epochs": args.epochs,
                 "batch_size": args.batch_size,
                 "lr": args.lr,
+                "lr_schedule": args.lr_schedule,
+                "lr_min": args.lr_min,
+                "warmup_steps": args.warmup_steps,
                 "value_weight": args.value_weight,
                 "policy_weight": args.policy_weight,
                 "amp": args.amp,
@@ -351,6 +386,9 @@ def main():
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
+        lr_schedule=args.lr_schedule,
+        lr_min=args.lr_min,
+        warmup_steps=args.warmup_steps,
         value_weight=args.value_weight,
         policy_weight=args.policy_weight,
         reward_scale=args.reward_scale,
