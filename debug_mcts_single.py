@@ -46,7 +46,18 @@ def _log_event(fp, payload):
     fp.flush()
 
 
-def _select_with_stats(node, player, c_puct, top_k, min_actions, policy_mass, log_topk, log_compact, depth):
+def _select_with_stats(
+    node,
+    player,
+    c_puct,
+    top_k,
+    min_actions,
+    policy_mass,
+    log_topk,
+    log_compact,
+    depth,
+    min_max_stats=None,
+):
     n = max(node.n_visits, 1)
     valid = mcts._candidate_actions(node.prior, node.valid_actions, node.n_visits, top_k, min_actions, policy_mass)
     if valid is None or len(valid) == 0:
@@ -55,7 +66,10 @@ def _select_with_stats(node, player, c_puct, top_k, min_actions, policy_mass, lo
     wsa = node.wsa[valid, player]
     q_vals = wsa / np.maximum(nsa, 1.0)
     u_vals = c_puct * node.prior[valid] * (np.sqrt(n) / (1.0 + nsa))
-    scores = q_vals + u_vals
+    normed_q = q_vals
+    if min_max_stats is not None:
+        normed_q = min_max_stats.normalize(q_vals)
+    scores = normed_q + u_vals
     action = int(valid[int(np.argmax(scores))])
     stats = {
         "node_id": id(node),
@@ -94,6 +108,7 @@ def _simulate_to_leaf_debug(
     sim_idx,
     log_topk,
     log_compact,
+    min_max_stats=None,
 ):
     path = []
     node = root
@@ -125,6 +140,7 @@ def _simulate_to_leaf_debug(
 
         name, obs = next(iter(obs_dict.items()))
         player = mcts._player_from_name(name)
+        node.player = player
         if not node.expanded:
             return "leaf", (node, path, player, obs, env), {"sim": sim_idx, "steps": steps}
 
@@ -140,6 +156,7 @@ def _simulate_to_leaf_debug(
                 log_topk,
                 log_compact,
                 depth,
+                min_max_stats,
             )
             stats["policy"] = "mcts_select"
         else:
@@ -205,6 +222,7 @@ def _eval_leaf_batch_debug(
     log_topk,
     log_obs,
     log_compact,
+    min_max_stats=None,
 ):
     obs_list = []
     mask_list = []
@@ -237,7 +255,7 @@ def _eval_leaf_batch_debug(
             value_vec[players[i]] = float(values_np[i, 0]) * float(value_scale)
         else:
             value_vec = values_np[i].astype(np.float32) * float(value_scale)
-        mcts._backprop(paths[i], root, value_vec)
+        mcts._backprop(paths[i], root, value_vec, min_max_stats)
         if log_compact:
             valid = np.flatnonzero(mask_list[i] > 0)
             compact_topk = log_topk if log_topk and log_topk > 0 else 8
@@ -323,6 +341,7 @@ def mcts_action_debug(
     leaf_batch_size = max(1, int(leaf_batch_size))
     if mcts_player_ids is not None:
         mcts_player_ids = set(mcts_player_ids)
+    min_max_stats = mcts.MinMaxStats()
 
     for sim in range(simulations):
         env_copy = mcts._clone_env(env)
@@ -346,10 +365,11 @@ def mcts_action_debug(
             sim,
             log_topk,
             log_compact,
+            min_max_stats,
         )
         if kind == "terminal":
             value_vec, path = payload
-            mcts._backprop(path, root, value_vec)
+            mcts._backprop(path, root, value_vec, min_max_stats)
             sim_meta["type"] = "simulation_terminal"
             sim_meta["value_vec"] = _serialize_array(value_vec, log_topk)
             _log_event(log_fp, sim_meta)
@@ -369,6 +389,7 @@ def mcts_action_debug(
                     log_topk,
                     log_obs,
                     log_compact,
+                    min_max_stats,
                 )
                 for entry in logs:
                     _log_event(log_fp, entry)
@@ -388,6 +409,7 @@ def mcts_action_debug(
             log_topk,
             log_obs,
             log_compact,
+            min_max_stats,
         )
         for entry in logs:
             _log_event(log_fp, entry)

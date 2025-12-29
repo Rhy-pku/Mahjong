@@ -305,6 +305,27 @@ def _to_device(array, device):
     return torch.as_tensor(array, dtype=torch.float32, device=device).contiguous()
 
 
+class MinMaxStats:
+    def __init__(self):
+        self.maximum = -float("inf")
+        self.minimum = float("inf")
+
+    def update(self, value):
+        if value is None:
+            return
+        if not math.isfinite(value):
+            return
+        if value > self.maximum:
+            self.maximum = value
+        if value < self.minimum:
+            self.minimum = value
+
+    def normalize(self, values):
+        if self.maximum > self.minimum:
+            return (values - self.minimum) / (self.maximum - self.minimum)
+        return values
+
+
 class MCTSNode:
     def __init__(self, action_size, value_dim):
         self.action_size = action_size
@@ -334,24 +355,29 @@ class MCTSNode:
         self.valid_actions = valid
         self.expanded = True
 
-    def select(self, player, c_puct, top_k, min_actions, policy_mass):
+    def select(self, player, c_puct, top_k, min_actions, policy_mass, min_max_stats=None):
         n = max(self.n_visits, 1)
         valid = _candidate_actions(self.prior, self.valid_actions, self.n_visits, top_k, min_actions, policy_mass)
         q = np.zeros(self.action_size, dtype=np.float32)
         nsa = self.nsa[valid].astype(np.float32)
         wsa = self.wsa[valid, player]
         q_vals = wsa / np.maximum(nsa, 1.0)
+        if min_max_stats is not None:
+            q_vals = min_max_stats.normalize(q_vals)
         u = c_puct * self.prior[valid] * math.sqrt(n) / (1.0 + nsa)
         scores = q_vals + u
         return int(valid[int(np.argmax(scores))])
 
 
-def _backprop(path, root, value_vec):
+def _backprop(path, root, value_vec, min_max_stats=None):
     if path:
         for node, action in path:
             node.n_visits += 1
             node.nsa[action] += 1
             node.wsa[action] += value_vec
+            if min_max_stats is not None and node.player is not None:
+                q_val = node.wsa[action, node.player] / node.nsa[action]
+                min_max_stats.update(float(q_val))
     else:
         root.n_visits += 1
 
@@ -370,6 +396,7 @@ def _simulate_to_leaf(
     min_actions,
     policy_mass,
     mcts_player_ids,
+    min_max_stats=None,
 ):
     path = []
     node = root
@@ -391,12 +418,13 @@ def _simulate_to_leaf(
 
         name, obs = next(iter(obs_dict.items()))
         player = _player_from_name(name)
+        node.player = player
         if not node.expanded:
             return "leaf", (node, path, player, obs, env)
 
         use_mcts = mcts_player_ids is None or player in mcts_player_ids
         if use_mcts:
-            action = node.select(player, c_puct, top_k, min_actions, policy_mass)
+            action = node.select(player, c_puct, top_k, min_actions, policy_mass, min_max_stats)
         else:
             action = int(np.argmax(node.prior))
         path.append((node, action))
@@ -424,6 +452,7 @@ def _eval_leaf_batch(
     in_channels,
     value_dim,
     value_scale=1.0,
+    min_max_stats=None,
 ):
     obs_list = []
     mask_list = []
@@ -454,7 +483,7 @@ def _eval_leaf_batch(
             value_vec[players[i]] = float(values_np[i, 0]) * float(value_scale)
         else:
             value_vec = values_np[i].astype(np.float32) * float(value_scale)
-        _backprop(paths[i], root, value_vec)
+        _backprop(paths[i], root, value_vec, min_max_stats)
 
 
 def mcts_action(
@@ -489,6 +518,7 @@ def mcts_action(
     leaf_batch_size = max(1, int(leaf_batch_size))
     if mcts_player_ids is not None:
         mcts_player_ids = set(mcts_player_ids)
+    min_max_stats = MinMaxStats()
     for _ in range(simulations):
         env_copy = _clone_env(env)
         if determinize:
@@ -508,18 +538,19 @@ def mcts_action(
             min_actions,
             policy_mass,
             mcts_player_ids,
+            min_max_stats,
         )
         if kind == "terminal":
             value_vec, path = payload
-            _backprop(path, root, value_vec)
+            _backprop(path, root, value_vec, min_max_stats)
         else:
             leaf_batch.append(payload)
             if len(leaf_batch) >= leaf_batch_size:
-                _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale)
+                _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale, min_max_stats)
                 leaf_batch = []
 
     if leaf_batch:
-        _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale)
+        _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale, min_max_stats)
 
     if not root.expanded:
         player = _player_from_name(name)

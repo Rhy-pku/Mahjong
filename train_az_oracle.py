@@ -8,6 +8,7 @@ import argparse
 import glob
 import os
 import time
+from collections import OrderedDict
 
 import numpy as np
 import torch
@@ -40,13 +41,14 @@ def _to_tensor(arr, device, dtype):
 
 
 class RandomBatchDataset(IterableDataset):
-    def __init__(self, files, file_sizes, batch_size, seed=None):
+    def __init__(self, files, file_sizes, batch_size, seed=None, cache_size=64):
         self.files = files
         self.file_sizes = file_sizes
         self.batch_size = batch_size
         total = float(sum(file_sizes))
         self.weights = np.array([s / total for s in file_sizes], dtype=np.float64)
         self.seed = seed
+        self.cache_size = max(int(cache_size), 0)
 
     def __iter__(self):
         info = get_worker_info()
@@ -58,27 +60,44 @@ class RandomBatchDataset(IterableDataset):
             seed = seed + info.id * 9973
         seed = seed % (2**32 - 1)
         rng = np.random.RandomState(seed)
-        cache = {}
+        cache = OrderedDict() if self.cache_size > 0 else None
         try:
             while True:
                 file_idx = rng.choice(len(self.files), p=self.weights)
-                data = cache.get(file_idx)
+                data = None
+                if cache is not None:
+                    data = cache.get(file_idx)
+                    if data is not None:
+                        cache.move_to_end(file_idx)
                 if data is None:
                     data = np.load(self.files[file_idx], mmap_mode="r")
-                    cache[file_idx] = data
+                    if cache is not None:
+                        cache[file_idx] = data
+                        if len(cache) > self.cache_size:
+                            _, old = cache.popitem(last=False)
+                            try:
+                                old.close()
+                            except Exception:
+                                pass
                 n = data["oracle_obs"].shape[0]
                 idx = rng.randint(0, n, size=self.batch_size)
                 obs = data["oracle_obs"][idx]
                 masks = data["action_mask"][idx]
                 pi = data["pi"][idx]
                 rewards = data["reward_vec"][idx]
+                if cache is None:
+                    try:
+                        data.close()
+                    except Exception:
+                        pass
                 yield obs, masks, pi, rewards
         finally:
-            for data in cache.values():
-                try:
-                    data.close()
-                except Exception:
-                    pass
+            if cache is not None:
+                for data in cache.values():
+                    try:
+                        data.close()
+                    except Exception:
+                        pass
 
 
 def train(
@@ -94,11 +113,16 @@ def train(
     value_weight,
     policy_weight,
     reward_scale,
+    optimizer_name,
+    weight_decay,
+    momentum,
+    nesterov,
     save_path,
     num_workers=0,
     prefetch_factor=2,
     steps_per_epoch=None,
     seed=None,
+    cache_size=64,
     wandb_run=None,
     wandb_log_interval=50,
     progress_interval=50,
@@ -125,7 +149,21 @@ def train(
     if ddp:
         model = DDP(model, device_ids=[device.index], output_device=device.index)
     model.train(True)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    opt = str(optimizer_name or "adamw").strip().lower()
+    if opt == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    elif opt == "adamw":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    elif opt == "sgd":
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=lr,
+            momentum=momentum,
+            weight_decay=weight_decay,
+            nesterov=nesterov,
+        )
+    else:
+        raise ValueError("Unsupported optimizer: %s" % optimizer_name)
     scaler = torch.cuda.amp.GradScaler(enabled=amp and device.type == "cuda")
 
     file_sizes = []
@@ -153,6 +191,7 @@ def train(
         file_sizes=file_sizes,
         batch_size=batch_size,
         seed=seed_offset,
+        cache_size=cache_size,
     )
     loader = DataLoader(
         dataset,
@@ -318,12 +357,17 @@ def main():
     parser.add_argument("--lr_schedule", default="constant", help="LR schedule: constant or cosine")
     parser.add_argument("--lr_min", type=float, default=0.0, help="Minimum LR for cosine schedule")
     parser.add_argument("--warmup_steps", type=int, default=0, help="Warmup steps before scheduling")
+    parser.add_argument("--optimizer", default="adamw", help="Optimizer: adam, adamw, or sgd")
+    parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay for optimizer")
+    parser.add_argument("--momentum", type=float, default=0.9, help="Momentum for SGD")
+    parser.add_argument("--nesterov", action="store_true", help="Use Nesterov momentum for SGD")
     parser.add_argument("--value_weight", type=float, default=1.0, help="Value loss weight")
     parser.add_argument("--policy_weight", type=float, default=1.0, help="Policy loss weight")
     parser.add_argument("--reward_scale", type=float, default=100.0, help="Divide rewards by this value")
     parser.add_argument("--save_path", required=True, help="Output checkpoint path")
     parser.add_argument("--num_workers", type=int, default=0, help="DataLoader workers")
     parser.add_argument("--prefetch_factor", type=int, default=2, help="Prefetch factor for workers")
+    parser.add_argument("--cache_size", type=int, default=64, help="Max open npz files to keep in LRU cache (0=disable)")
     parser.add_argument("--steps_per_epoch", type=int, default=None, help="Override batches per epoch")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for sampling")
     parser.add_argument("--progress_interval", type=int, default=50, help="Print every N batches when tqdm is absent")
@@ -355,11 +399,16 @@ def main():
                 "lr_schedule": args.lr_schedule,
                 "lr_min": args.lr_min,
                 "warmup_steps": args.warmup_steps,
+                "optimizer": args.optimizer,
+                "weight_decay": args.weight_decay,
+                "momentum": args.momentum,
+                "nesterov": args.nesterov,
                 "value_weight": args.value_weight,
                 "policy_weight": args.policy_weight,
                 "amp": args.amp,
                 "num_workers": args.num_workers,
                 "reward_scale": args.reward_scale,
+                "cache_size": args.cache_size,
             },
         )
 
@@ -368,7 +417,7 @@ def main():
         device = torch.device("cuda:%d" % local_rank)
     if is_main:
         print(
-            "train config: data_dir=%s device=%s epochs=%d batch=%d lr=%.6f workers=%d reward_scale=%.2f"
+            "train config: data_dir=%s device=%s epochs=%d batch=%d lr=%.6f workers=%d reward_scale=%.2f optimizer=%s wd=%.2e cache=%d"
             % (
                 args.data_dir,
                 str(device),
@@ -377,6 +426,9 @@ def main():
                 args.lr,
                 args.num_workers,
                 args.reward_scale,
+                args.optimizer,
+                args.weight_decay,
+                args.cache_size,
             )
         )
     train(
@@ -392,11 +444,16 @@ def main():
         value_weight=args.value_weight,
         policy_weight=args.policy_weight,
         reward_scale=args.reward_scale,
+        optimizer_name=args.optimizer,
+        weight_decay=args.weight_decay,
+        momentum=args.momentum,
+        nesterov=args.nesterov,
         save_path=args.save_path,
         num_workers=args.num_workers,
         prefetch_factor=args.prefetch_factor,
         steps_per_epoch=args.steps_per_epoch,
         seed=args.seed,
+        cache_size=args.cache_size,
         wandb_run=wandb_run,
         wandb_log_interval=args.wandb_log_interval,
         progress_interval=args.progress_interval,

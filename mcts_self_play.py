@@ -168,6 +168,27 @@ def _dump_tree_dot(root, path, max_depth=3, max_children=8, min_visits=1):
         f.write("\n".join(lines))
 
 
+def _apply_root_dirichlet_noise(root, alpha, fraction, rng=None):
+    if alpha <= 0 or fraction <= 0:
+        return
+    if root.prior is None:
+        return
+    valid = root.valid_actions
+    if valid is None or len(valid) == 0:
+        return
+    if rng is not None:
+        noise_rng = np.random.default_rng(rng.randint(0, 2**32 - 1))
+        noise = noise_rng.dirichlet([alpha] * len(valid))
+    else:
+        noise = np.random.dirichlet([alpha] * len(valid))
+    prior = root.prior.copy()
+    prior[valid] = prior[valid] * (1.0 - fraction) + noise * fraction
+    total = prior[valid].sum()
+    if total > 1e-8:
+        prior[valid] = prior[valid] / total
+    root.prior = prior
+
+
 def _select_with_stats(
     node,
     player,
@@ -178,6 +199,7 @@ def _select_with_stats(
     log_topk,
     compact,
     depth,
+    min_max_stats=None,
 ):
     n = max(node.n_visits, 1)
     valid = _candidate_actions(node.prior, node.valid_actions, node.n_visits, top_k, min_actions, policy_mass)
@@ -186,8 +208,11 @@ def _select_with_stats(
     nsa = node.nsa[valid].astype(np.float32)
     wsa = node.wsa[valid, player]
     q_vals = wsa / np.maximum(nsa, 1.0)
+    normed_q = q_vals
+    if min_max_stats is not None:
+        normed_q = min_max_stats.normalize(q_vals)
     u_vals = c_puct * node.prior[valid] * (math.sqrt(n) / (1.0 + nsa))
-    scores = q_vals + u_vals
+    scores = normed_q + u_vals
     action = int(valid[int(np.argmax(scores))])
     stats = {
         "node_id": id(node),
@@ -428,6 +453,29 @@ def _to_device(array, device):
     return torch.as_tensor(array, dtype=torch.float32, device=device).contiguous()
 
 
+class MinMaxStats:
+    def __init__(self):
+        self.maximum = -float("inf")
+        self.minimum = float("inf")
+
+    def update(self, value):
+        if value is None:
+            return
+        if not math.isfinite(value):
+            return
+        if value > self.maximum:
+            self.maximum = value
+        if value < self.minimum:
+            self.minimum = value
+
+    def normalize(self, values):
+        delta = self.maximum - self.minimum
+        if delta > 1e-5:
+            norm = (values - self.minimum) / delta
+            return np.clip(norm, 0.0, 1.0)
+        return values
+
+
 class MCTSNode:
     def __init__(self, action_size, value_dim):
         self.action_size = action_size
@@ -457,24 +505,51 @@ class MCTSNode:
         self.valid_actions = valid
         self.expanded = True
 
-    def select(self, player, c_puct, top_k, min_actions, policy_mass):
-        n = max(self.n_visits, 1)
-        valid = _candidate_actions(self.prior, self.valid_actions, self.n_visits, top_k, min_actions, policy_mass)
-        q = np.zeros(self.action_size, dtype=np.float32)
-        nsa = self.nsa[valid].astype(np.float32)
-        wsa = self.wsa[valid, player]
-        q_vals = wsa / np.maximum(nsa, 1.0)
-        u = c_puct * self.prior[valid] * math.sqrt(n) / (1.0 + nsa)
-        scores = q_vals + u
-        return int(valid[int(np.argmax(scores))])
+    def select(self, player, c_puct, top_k, min_actions, policy_mass, min_max_stats=None):
+            n = max(self.n_visits, 1)
+            # 1. 获取候选动作
+            valid = _candidate_actions(self.prior, self.valid_actions, self.n_visits, top_k, min_actions, policy_mass)
+            
+            # 2. 提取数据
+            nsa = self.nsa[valid].astype(np.float32)
+            wsa = self.wsa[valid, player]
+            
+            # 3. 计算 Mean Q (只对已访问节点有效)
+            # 使用 np.divide 防止除以 0，未访问的地方暂时填 0
+            q_vals = np.divide(wsa, nsa, out=np.zeros_like(wsa), where=nsa > 0)
+            
+            # 4. 归一化
+            if min_max_stats is not None:
+                q_vals = min_max_stats.normalize(q_vals)
+            
+            # --- 【核心修改】乐观初始化 (Optimistic Initialization) ---
+            # 逻辑：如果没有访问过 (nsa == 0)，则认为 Q 值为 1.0 (满分)
+            # 这会强迫 MCTS 去探索那些 Prior 低但还没被验证过的动作
+            
+            # 创建一个全 1.0 的数组 (默认大家都是满分)
+            final_q = np.ones_like(q_vals)
+            
+            # 对于那些“已经访问过”的节点 (nsa > 0)，我们知道了它的底细，就用真实的 q_vals 覆盖 1.0
+            # 剩下的那些 nsa == 0 的节点，保持为 1.0
+            np.copyto(final_q, q_vals, where=(nsa > 0))
+            # -----------------------------------------------------
+
+            # 5. 计算 U 值
+            u = c_puct * self.prior[valid] * math.sqrt(n) / (1.0 + nsa)
+            
+            # 6. 加总 (现在 final_q 里的未访问节点是 1.0，非常有竞争力)
+            scores = final_q + u
+            
+            return int(valid[int(np.argmax(scores))])
 
 
-def _backprop(path, root, value_vec):
+def _backprop(path, root, value_vec, min_max_stats=None):
     if path:
         for node, action in path:
-            node.n_visits += 1
-            node.nsa[action] += 1
             node.wsa[action] += value_vec
+            if min_max_stats is not None and node.player is not None:
+                q_val = node.wsa[action, node.player] / node.nsa[action]
+                min_max_stats.update(float(q_val))
     else:
         root.n_visits += 1
 
@@ -493,6 +568,7 @@ def _simulate_to_leaf(
     min_actions,
     policy_mass,
     mcts_player_ids,
+    min_max_stats=None,
 ):
     path = []
     node = root
@@ -514,14 +590,17 @@ def _simulate_to_leaf(
 
         name, obs = next(iter(obs_dict.items()))
         player = _player_from_name(name)
+        node.player = player
         if not node.expanded:
             return "leaf", (node, path, player, obs, env)
 
         use_mcts = mcts_player_ids is None or player in mcts_player_ids
         if use_mcts:
-            action = node.select(player, c_puct, top_k, min_actions, policy_mass)
+            action = node.select(player, c_puct, top_k, min_actions, policy_mass, min_max_stats)
         else:
             action = int(np.argmax(node.prior))
+        node.n_visits += 1
+        node.nsa[action] += 1
         path.append((node, action))
         child = node.children.get(action)
         if child is None:
@@ -556,6 +635,7 @@ def _simulate_to_leaf_debug(
     sim_idx,
     log_topk,
     log_compact,
+    min_max_stats=None,
 ):
     path = []
     node = root
@@ -587,6 +667,7 @@ def _simulate_to_leaf_debug(
 
         name, obs = next(iter(obs_dict.items()))
         player = _player_from_name(name)
+        node.player = player
         if not node.expanded:
             return "leaf", (node, path, player, obs, env), {"sim": sim_idx, "steps": steps}
 
@@ -602,6 +683,7 @@ def _simulate_to_leaf_debug(
                 log_topk,
                 log_compact,
                 depth,
+                min_max_stats,
             )
             stats["policy"] = "mcts_select"
         else:
@@ -630,6 +712,8 @@ def _simulate_to_leaf_debug(
                     "wsa_player": _serialize_array(node.wsa[:, player], log_topk),
                     "chosen_action": action,
                 }
+        node.n_visits += 1
+        node.nsa[action] += 1
         try:
             response = env.agents[player].action2response(action)
         except Exception:
@@ -667,6 +751,7 @@ def _eval_leaf_batch_debug(
     log_topk,
     log_obs,
     log_compact,
+    min_max_stats=None,
 ):
     obs_list = []
     mask_list = []
@@ -699,7 +784,7 @@ def _eval_leaf_batch_debug(
             value_vec[players[i]] = float(values_np[i, 0]) * float(value_scale)
         else:
             value_vec = values_np[i].astype(np.float32) * float(value_scale)
-        _backprop(paths[i], root, value_vec)
+        _backprop(paths[i], root, value_vec, min_max_stats)
         if log_compact:
             valid = np.flatnonzero(mask_list[i] > 0)
             compact_topk = log_topk if log_topk and log_topk > 0 else 8
@@ -735,6 +820,7 @@ def _eval_leaf_batch(
     in_channels,
     value_dim,
     value_scale=1.0,
+    min_max_stats=None,
 ):
     obs_list = []
     mask_list = []
@@ -765,7 +851,7 @@ def _eval_leaf_batch(
             value_vec[players[i]] = float(values_np[i, 0]) * float(value_scale)
         else:
             value_vec = values_np[i].astype(np.float32) * float(value_scale)
-        _backprop(paths[i], root, value_vec)
+        _backprop(paths[i], root, value_vec, min_max_stats)
 
 
 def mcts_action(
@@ -787,6 +873,8 @@ def mcts_action(
     leaf_batch_size,
     mcts_player_ids=None,
     value_scale=1.0,
+    dirichlet_alpha=0.0,
+    exploration_fraction=0.0,
 ):
     name, obs = next(iter(obs_dict.items()))
     action_size = obs["action_mask"].shape[0]
@@ -796,10 +884,25 @@ def mcts_action(
         pi[hu_action] = 1.0
         return hu_action, pi
     root = MCTSNode(action_size, value_dim)
+    root_noise_applied = False
     leaf_batch = []
     leaf_batch_size = max(1, int(leaf_batch_size))
     if mcts_player_ids is not None:
         mcts_player_ids = set(mcts_player_ids)
+    min_max_stats = MinMaxStats()
+
+    def _maybe_apply_root_noise():
+        nonlocal root_noise_applied
+        if root_noise_applied:
+            return
+        if dirichlet_alpha <= 0 or exploration_fraction <= 0:
+            root_noise_applied = True
+            return
+        if not root.expanded:
+            return
+        _apply_root_dirichlet_noise(root, dirichlet_alpha, exploration_fraction, rng)
+        root_noise_applied = True
+
     for _ in range(simulations):
         env_copy = _clone_env(env)
         if determinize:
@@ -819,24 +922,28 @@ def mcts_action(
             min_actions,
             policy_mass,
             mcts_player_ids,
+            min_max_stats,
         )
         if kind == "terminal":
             value_vec, path = payload
-            _backprop(path, root, value_vec)
+            _backprop(path, root, value_vec, min_max_stats)
         else:
             leaf_batch.append(payload)
             if len(leaf_batch) >= leaf_batch_size:
-                _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale)
+                _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale, min_max_stats)
                 leaf_batch = []
+                _maybe_apply_root_noise()
 
     if leaf_batch:
-        _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale)
+        _eval_leaf_batch(leaf_batch, root, model, device, in_channels, value_dim, value_scale, min_max_stats)
+        _maybe_apply_root_noise()
 
     if not root.expanded:
         player = _player_from_name(name)
         priors, _ = policy_value(model, device, env, player, obs, in_channels, value_dim, value_scale)
         root.player = player
         root.expand(obs["action_mask"], priors)
+        _maybe_apply_root_noise()
 
     counts = root.nsa.astype(np.float32)
     mask = obs["action_mask"].astype(np.float32)
@@ -901,6 +1008,8 @@ def mcts_action_debug(
     policy_mass,
     leaf_batch_size,
     mcts_player_ids,
+    dirichlet_alpha=0.0,
+    exploration_fraction=0.0,
     episode=0,
     step=0,
     log_topk=0,
@@ -936,11 +1045,25 @@ def mcts_action_debug(
         return int(hu_action), pi
 
     root = MCTSNode(action_size, value_dim)
+    root_noise_applied = False
     leaf_batch = []
     leaf_meta = []
     leaf_batch_size = max(1, int(leaf_batch_size))
     if mcts_player_ids is not None:
         mcts_player_ids = set(mcts_player_ids)
+    min_max_stats = MinMaxStats()
+
+    def _maybe_apply_root_noise():
+        nonlocal root_noise_applied
+        if root_noise_applied:
+            return
+        if dirichlet_alpha <= 0 or exploration_fraction <= 0:
+            root_noise_applied = True
+            return
+        if not root.expanded:
+            return
+        _apply_root_dirichlet_noise(root, dirichlet_alpha, exploration_fraction, rng)
+        root_noise_applied = True
 
     for sim in range(simulations):
         env_copy = _clone_env(env)
@@ -964,10 +1087,11 @@ def mcts_action_debug(
             sim,
             log_topk,
             log_compact,
+            min_max_stats,
         )
         if kind == "terminal":
             value_vec, path = payload
-            _backprop(path, root, value_vec)
+            _backprop(path, root, value_vec, min_max_stats)
             sim_meta["type"] = "simulation_terminal"
             sim_meta["value_vec"] = _serialize_array(value_vec, log_topk)
             _log_event(log_fp, sim_meta)
@@ -987,11 +1111,13 @@ def mcts_action_debug(
                     log_topk,
                     log_obs,
                     log_compact,
+                    min_max_stats,
                 )
                 for entry in logs:
                     _log_event(log_fp, entry)
                 leaf_batch = []
                 leaf_meta = []
+                _maybe_apply_root_noise()
 
     if leaf_batch:
         logs = _eval_leaf_batch_debug(
@@ -1006,9 +1132,11 @@ def mcts_action_debug(
             log_topk,
             log_obs,
             log_compact,
+            min_max_stats,
         )
         for entry in logs:
             _log_event(log_fp, entry)
+        _maybe_apply_root_noise()
 
     if not root.expanded:
         priors, _ = policy_value(model, device, env, player, obs, in_channels, value_dim, value_scale)
@@ -1021,6 +1149,7 @@ def mcts_action_debug(
                 "priors": _serialize_array(priors, log_topk),
             },
         )
+        _maybe_apply_root_noise()
 
     counts = root.nsa.astype(np.float32)
     mask = obs["action_mask"].astype(np.float32)
@@ -1157,6 +1286,8 @@ def self_play(
     mcts_players=None,
     start_wall_limit=0,
     value_scale=1.0,
+    root_dirichlet_alpha=0.0,
+    root_exploration_fraction=0.0,
     debug_log_path=None,
     debug_log_episode=-1,
     debug_log_topk=0,
@@ -1232,6 +1363,8 @@ def self_play(
                 "c_puct": c_puct,
                 "reward_scale": reward_scale,
                 "value_scale": value_scale,
+                "root_dirichlet_alpha": root_dirichlet_alpha,
+                "root_exploration_fraction": root_exploration_fraction,
                 "determinize": determinize,
                 "temperature": temperature,
                 "top_k": top_k,
@@ -1263,7 +1396,8 @@ def self_play(
         players_repr = "all"
     print(
         "self-play config: episodes=%d sims=%d c_puct=%.3f determinize=%s temp=%.3f top_k=%s min_actions=%d "
-        "policy_mass=%.2f leaf_batch=%d reward_scale=%.2f value_scale=%.2f out_dir=%s mcts_mode=%s mcts_players=%s start_wall_limit=%d"
+        "policy_mass=%.2f leaf_batch=%d reward_scale=%.2f value_scale=%.2f dir_alpha=%.4f dir_frac=%.2f "
+        "out_dir=%s mcts_mode=%s mcts_players=%s start_wall_limit=%d"
         % (
             episodes,
             simulations,
@@ -1276,6 +1410,8 @@ def self_play(
             leaf_batch_size,
             reward_scale,
             value_scale,
+            root_dirichlet_alpha,
+            root_exploration_fraction,
             out_dir or "None",
             mcts_mode,
             players_repr,
@@ -1381,6 +1517,8 @@ def self_play(
                             policy_mass=policy_mass,
                             leaf_batch_size=leaf_batch_size,
                             mcts_player_ids=mcts_player_ids,
+                            dirichlet_alpha=root_dirichlet_alpha,
+                            exploration_fraction=root_exploration_fraction,
                             episode=episode_idx,
                             step=episode_step,
                             log_topk=debug_log_topk,
@@ -1412,6 +1550,8 @@ def self_play(
                             leaf_batch_size=leaf_batch_size,
                             mcts_player_ids=mcts_player_ids,
                             value_scale=value_scale,
+                            dirichlet_alpha=root_dirichlet_alpha,
+                            exploration_fraction=root_exploration_fraction,
                         )
                     episode_samples.append(
                         {
@@ -1624,6 +1764,8 @@ def main():
     parser.add_argument("--c_puct", type=float, default=1.5, help="PUCT constant")
     parser.add_argument("--reward_scale", type=float, default=1.0, help="Divide rewards by this value")
     parser.add_argument("--value_scale", type=float, default=1.0, help="Multiply value outputs by this value in MCTS")
+    parser.add_argument("--root_dirichlet_alpha", type=float, default=0.0, help="Dirichlet alpha for root noise in self-play")
+    parser.add_argument("--root_exploration_fraction", type=float, default=0.0, help="Mix fraction for root Dirichlet noise")
     parser.add_argument("--determinize", action="store_true", help="Shuffle wall per simulation")
     parser.add_argument("--temperature", type=float, default=0.0, help="Action temperature")
     parser.add_argument("--top_k", type=int, default=0, help="Top-K actions to expand per node (0=disable)")
@@ -1683,6 +1825,8 @@ def main():
                 "c_puct": args.c_puct,
                 "reward_scale": args.reward_scale,
                 "value_scale": args.value_scale,
+                "root_dirichlet_alpha": args.root_dirichlet_alpha,
+                "root_exploration_fraction": args.root_exploration_fraction,
                 "determinize": args.determinize,
                 "temperature": args.temperature,
                 "top_k": args.top_k,
@@ -1707,6 +1851,8 @@ def main():
         c_puct=args.c_puct,
         reward_scale=args.reward_scale,
         value_scale=args.value_scale,
+        root_dirichlet_alpha=args.root_dirichlet_alpha,
+        root_exploration_fraction=args.root_exploration_fraction,
         determinize=args.determinize,
         temperature=args.temperature,
         top_k=args.top_k,

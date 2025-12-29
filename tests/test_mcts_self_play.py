@@ -191,6 +191,8 @@ class TestEvalLeafBatch(unittest.TestCase):
         root = mcts.MCTSNode(action_size=3, value_dim=4)
         node = mcts.MCTSNode(action_size=3, value_dim=4)
         path = [(root, 2)]
+        root.n_visits = 1
+        root.nsa[2] = 1
         model = FakeModel(logits=[0.0, 0.0, 1.0], values=[0.5, 0.0, 0.0, 0.0])
         leaf_batch = [(node, path, 0, obs, env)]
         mcts._eval_leaf_batch(

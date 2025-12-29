@@ -396,9 +396,15 @@ def spawn_self_play(
         progress_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.progress" % (iter_id, worker_id))
         summary_path = os.path.join(paths["logs"], "selfplay_iter_%04d_worker_%d.summary.json" % (iter_id, worker_id))
         worker_device = pick_worker_device(worker_id)
+        self_play_script = sp_cfg.get("self_play_script")
+        if not self_play_script:
+            if sp_cfg.get("use_clean_self_play"):
+                self_play_script = "mcts_self_play_clean.py"
+            else:
+                self_play_script = "mcts_self_play.py"
         cmd = [
             sys.executable,
-            "mcts_self_play.py",
+            self_play_script,
             "--model",
             best_model,
             "--episodes",
@@ -443,7 +449,13 @@ def spawn_self_play(
             summary_path,
             "--seed",
             str(cfg["seed"] + iter_id * 1000 + worker_id),
+        
+            "--root_dirichlet_alpha",
+            str(sp_cfg.get("root_dirichlet_alpha", 0.0)),
+            "--root_exploration_fraction",
+            str(sp_cfg.get("root_exploration_fraction", 0.0)),
         ]
+    
         debug_worker = sp_cfg.get("debug_log_worker", -1)
         if debug_worker is not None and int(debug_worker) == worker_id:
             debug_episode = int(sp_cfg.get("debug_log_episode", 0))
@@ -629,6 +641,12 @@ def train_candidate(
         str(tr_cfg.get("lr_min", 0.0)),
         "--warmup_steps",
         str(tr_cfg.get("warmup_steps", 0)),
+        "--optimizer",
+        str(tr_cfg.get("optimizer", "adamw")),
+        "--weight_decay",
+        str(tr_cfg.get("weight_decay", 0.0)),
+        "--momentum",
+        str(tr_cfg.get("momentum", 0.9)),
         "--value_weight",
         str(tr_cfg["value_weight"]),
         "--policy_weight",
@@ -645,6 +663,8 @@ def train_candidate(
         str(tr_cfg["progress_interval"]),
         "--dataloader_timeout",
         str(tr_cfg["dataloader_timeout"]),
+        "--cache_size",
+        str(tr_cfg.get("cache_size", 64)),
     ]
     if tr_cfg.get("steps_per_epoch") is not None:
         cmd += ["--steps_per_epoch", str(tr_cfg["steps_per_epoch"])]
@@ -652,6 +672,8 @@ def train_candidate(
         cmd += ["--seed", str(tr_cfg["seed"])]
     if tr_cfg.get("amp"):
         cmd.append("--amp")
+    if tr_cfg.get("nesterov"):
+        cmd.append("--nesterov")
     if tr_cfg.get("wandb"):
         cmd.append("--wandb")
         cmd += ["--wandb_project", tr_cfg["wandb_project"]]
