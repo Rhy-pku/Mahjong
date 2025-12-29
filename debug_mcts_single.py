@@ -46,7 +46,7 @@ def _log_event(fp, payload):
     fp.flush()
 
 
-def _select_with_stats(node, player, c_puct, top_k, min_actions, policy_mass, log_topk):
+def _select_with_stats(node, player, c_puct, top_k, min_actions, policy_mass, log_topk, log_compact, depth):
     n = max(node.n_visits, 1)
     valid = mcts._candidate_actions(node.prior, node.valid_actions, node.n_visits, top_k, min_actions, policy_mass)
     if valid is None or len(valid) == 0:
@@ -60,16 +60,20 @@ def _select_with_stats(node, player, c_puct, top_k, min_actions, policy_mass, lo
     stats = {
         "node_id": id(node),
         "player": int(player),
+        "depth": int(depth),
         "n_visits": int(node.n_visits),
         "valid_actions": valid.tolist(),
-        "prior": _serialize_array(node.prior, log_topk),
-        "nsa": _serialize_array(node.nsa, log_topk),
-        "wsa_player": _serialize_array(node.wsa[:, player], log_topk),
-        "q_vals": _serialize_array(q_vals, log_topk),
-        "u_vals": _serialize_array(u_vals, log_topk),
-        "scores": _serialize_array(scores, log_topk),
+        "prior_valid": node.prior[valid].astype(np.float32).tolist(),
+        "nsa_valid": nsa.tolist(),
+        "q_vals": q_vals.tolist(),
+        "u_vals": u_vals.tolist(),
+        "scores": scores.tolist(),
         "chosen_action": action,
     }
+    if not log_compact:
+        stats["prior"] = _serialize_array(node.prior, log_topk)
+        stats["nsa"] = _serialize_array(node.nsa, log_topk)
+        stats["wsa_player"] = _serialize_array(node.wsa[:, player], log_topk)
     return action, stats
 
 
@@ -89,10 +93,12 @@ def _simulate_to_leaf_debug(
     mcts_player_ids,
     sim_idx,
     log_topk,
+    log_compact,
 ):
     path = []
     node = root
     steps = []
+    depth = 0
     while True:
         if env.done:
             value_vec = mcts.reward_to_vec(env, None, reward_scale)
@@ -124,19 +130,44 @@ def _simulate_to_leaf_debug(
 
         use_mcts = mcts_player_ids is None or player in mcts_player_ids
         if use_mcts:
-            action, stats = _select_with_stats(node, player, c_puct, top_k, min_actions, policy_mass, log_topk)
+            action, stats = _select_with_stats(
+                node,
+                player,
+                c_puct,
+                top_k,
+                min_actions,
+                policy_mass,
+                log_topk,
+                log_compact,
+                depth,
+            )
             stats["policy"] = "mcts_select"
         else:
             action = int(np.argmax(node.prior))
-            stats = {
-                "node_id": id(node),
-                "player": int(player),
-                "policy": "prior_argmax",
-                "prior": _serialize_array(node.prior, log_topk),
-                "nsa": _serialize_array(node.nsa, log_topk),
-                "wsa_player": _serialize_array(node.wsa[:, player], log_topk),
-                "chosen_action": action,
-            }
+            if log_compact:
+                valid = node.valid_actions
+                if valid is None or len(valid) == 0:
+                    valid = np.arange(node.action_size, dtype=np.int32)
+                stats = {
+                    "node_id": id(node),
+                    "player": int(player),
+                    "depth": int(depth),
+                    "policy": "prior_argmax",
+                    "valid_actions": valid.tolist(),
+                    "prior_valid": node.prior[valid].astype(np.float32).tolist(),
+                    "chosen_action": action,
+                }
+            else:
+                stats = {
+                    "node_id": id(node),
+                    "player": int(player),
+                    "depth": int(depth),
+                    "policy": "prior_argmax",
+                    "prior": _serialize_array(node.prior, log_topk),
+                    "nsa": _serialize_array(node.nsa, log_topk),
+                    "wsa_player": _serialize_array(node.wsa[:, player], log_topk),
+                    "chosen_action": action,
+                }
         try:
             response = env.agents[player].action2response(action)
         except Exception:
@@ -150,6 +181,7 @@ def _simulate_to_leaf_debug(
             child = mcts.MCTSNode(node.action_size, node.value_dim)
             node.children[action] = child
         node = child
+        depth += 1
         action_dict = {n: 0 for n in env.agent_names}
         action_dict[name] = action
         obs_dict, rewards, done, err = mcts._safe_env_step(env, action_dict)
@@ -172,6 +204,7 @@ def _eval_leaf_batch_debug(
     value_scale,
     log_topk,
     log_obs,
+    log_compact,
 ):
     obs_list = []
     mask_list = []
@@ -197,6 +230,7 @@ def _eval_leaf_batch_debug(
     logs = []
     for i in range(len(leaf_batch)):
         priors = probs[i]
+        nodes[i].player = players[i]
         nodes[i].expand(mask_list[i], priors)
         if value_dim == 1:
             value_vec = np.zeros(4, dtype=np.float32)
@@ -204,8 +238,20 @@ def _eval_leaf_batch_debug(
         else:
             value_vec = values_np[i].astype(np.float32) * float(value_scale)
         mcts._backprop(paths[i], root, value_vec)
-        logs.append(
-            {
+        if log_compact:
+            valid = np.flatnonzero(mask_list[i] > 0)
+            compact_topk = log_topk if log_topk and log_topk > 0 else 8
+            entry = {
+                "type": "leaf_eval",
+                "sim": leaf_meta[i]["sim"],
+                "player": int(players[i]),
+                "steps": leaf_meta[i].get("steps", []),
+                "valid_actions": valid.tolist(),
+                "priors_topk": _serialize_array(priors, compact_topk),
+                "value_vec": _serialize_array(value_vec, log_topk),
+            }
+        else:
+            entry = {
                 "type": "leaf_eval",
                 "sim": leaf_meta[i]["sim"],
                 "player": int(players[i]),
@@ -214,9 +260,9 @@ def _eval_leaf_batch_debug(
                 "priors": _serialize_array(priors, log_topk),
                 "value_vec": _serialize_array(value_vec, log_topk),
             }
-        )
         if log_obs:
-            logs[-1]["oracle_obs"] = _serialize_array(obs_list[i], 0)
+            entry["oracle_obs"] = _serialize_array(obs_list[i], 0)
+        logs.append(entry)
     return logs
 
 
@@ -239,10 +285,15 @@ def mcts_action_debug(
     policy_mass,
     leaf_batch_size,
     mcts_player_ids,
-    step,
-    log_topk,
-    log_obs,
-    log_fp,
+    step=0,
+    log_topk=0,
+    log_obs=False,
+    log_compact=True,
+    tree_path=None,
+    tree_depth=3,
+    tree_max_children=8,
+    tree_min_visits=1,
+    log_fp=None,
 ):
     name, obs = next(iter(obs_dict.items()))
     player = mcts._player_from_name(name)
@@ -294,6 +345,7 @@ def mcts_action_debug(
             mcts_player_ids,
             sim,
             log_topk,
+            log_compact,
         )
         if kind == "terminal":
             value_vec, path = payload
@@ -316,6 +368,7 @@ def mcts_action_debug(
                     value_scale,
                     log_topk,
                     log_obs,
+                    log_compact,
                 )
                 for entry in logs:
                     _log_event(log_fp, entry)
@@ -334,6 +387,7 @@ def mcts_action_debug(
             value_scale,
             log_topk,
             log_obs,
+            log_compact,
         )
         for entry in logs:
             _log_event(log_fp, entry)
@@ -341,6 +395,7 @@ def mcts_action_debug(
     if not root.expanded:
         player = mcts._player_from_name(name)
         priors, _ = mcts.policy_value(model, device, env, player, obs, in_channels, value_dim, value_scale)
+        root.player = player
         root.expand(obs["action_mask"], priors)
         _log_event(
             log_fp,
@@ -384,23 +439,43 @@ def mcts_action_debug(
             pi = probs
             action = int(np.random.choice(np.arange(len(probs)), p=probs))
 
-    _log_event(
-        log_fp,
-        {
-            "type": "decision_end",
-            "step": int(step),
-            "player": int(player),
-            "name": name,
-            "use_mcts": True,
-            "action": int(action),
-            "pi": _serialize_array(pi, log_topk),
-            "root_n_visits": int(root.n_visits),
-            "root_prior": _serialize_array(root.prior, log_topk),
-            "root_nsa": _serialize_array(root.nsa, log_topk),
-            "root_wsa_player": _serialize_array(root.wsa[:, mcts._player_from_name(name)], log_topk),
-            "root_valid": root.valid_actions.tolist() if root.valid_actions is not None else [],
-        },
-    )
+    decision_log = {
+        "type": "decision_end",
+        "step": int(step),
+        "player": int(player),
+        "name": name,
+        "use_mcts": True,
+        "action": int(action),
+        "pi": _serialize_array(pi, log_topk),
+        "root_n_visits": int(root.n_visits),
+    }
+    if log_compact:
+        if root.valid_actions is not None:
+            valid = root.valid_actions
+        else:
+            valid = np.flatnonzero(obs["action_mask"] > 0)
+        decision_log["root_valid"] = valid.tolist()
+        if root.prior is not None:
+            decision_log["root_prior_valid"] = root.prior[valid].astype(np.float32).tolist()
+        decision_log["root_nsa_valid"] = root.nsa[valid].astype(np.int32).tolist()
+        root_player = root.player if root.player is not None else player
+        q_vals = root.wsa[valid, root_player] / np.maximum(root.nsa[valid], 1.0)
+        decision_log["root_q_valid"] = q_vals.astype(np.float32).tolist()
+    else:
+        decision_log["root_prior"] = _serialize_array(root.prior, log_topk)
+        decision_log["root_nsa"] = _serialize_array(root.nsa, log_topk)
+        decision_log["root_wsa_player"] = _serialize_array(root.wsa[:, mcts._player_from_name(name)], log_topk)
+        decision_log["root_valid"] = root.valid_actions.tolist() if root.valid_actions is not None else []
+    _log_event(log_fp, decision_log)
+    if tree_path:
+        tree_out = mcts._format_debug_tree_path(tree_path, 0, step)
+        mcts._dump_tree_dot(
+            root,
+            tree_out,
+            max_depth=int(tree_depth),
+            max_children=int(tree_max_children),
+            min_visits=int(tree_min_visits),
+        )
     return int(action), pi
 
 
@@ -426,8 +501,14 @@ def main():
     parser.add_argument("--start_wall_limit", type=int, default=0, help="Use MCTS only when remaining tiles <= this")
     parser.add_argument("--log_topk", type=int, default=0, help="Log only top-K entries for arrays (0=full)")
     parser.add_argument("--log_obs", action="store_true", help="Log oracle observations in detail")
+    parser.add_argument("--log_full", action="store_true", help="Log full arrays in debug output")
+    parser.add_argument("--tree_path", default="", help="Write MCTS tree DOT per decision (supports {step})")
+    parser.add_argument("--tree_depth", type=int, default=3, help="Max depth for debug tree")
+    parser.add_argument("--tree_max_children", type=int, default=8, help="Max children per node in debug tree")
+    parser.add_argument("--tree_min_visits", type=int, default=1, help="Min visits to include edge in debug tree")
     parser.add_argument("--max_steps", type=int, default=0, help="Stop after N env steps (0=disable)")
     args = parser.parse_args()
+    args.log_compact = not args.log_full
 
     device = torch.device(args.device)
     state_dict = mcts.load_state_dict_compat(args.model)
@@ -475,6 +556,11 @@ def main():
                 "start_wall_limit": args.start_wall_limit,
                 "log_topk": args.log_topk,
                 "log_obs": args.log_obs,
+                "log_compact": args.log_compact,
+                "tree_path": args.tree_path,
+                "tree_depth": args.tree_depth,
+                "tree_max_children": args.tree_max_children,
+                "tree_min_visits": args.tree_min_visits,
                 "in_channels": in_channels,
                 "value_dim": value_dim,
                 "timestamp": time.time(),
@@ -502,21 +588,24 @@ def main():
                 name = next(iter(obs.keys()))
                 player = mcts._player_from_name(name)
                 use_mcts = mcts_active and (player == args.mcts_player)
-                _log_event(
-                    log_fp,
-                    {
-                        "type": "decision_start",
-                        "step": step_idx,
-                        "player": int(player),
-                        "name": name,
-                        "use_mcts": bool(use_mcts),
-                        "state": int(getattr(env, "state", -1)),
-                        "cur_tile": getattr(env, "curTile", None),
-                        "wall_remaining": _remaining_wall_tiles(env),
-                        "hand": list(env.hands[player]),
-                        "action_mask": _serialize_array(obs[name]["action_mask"], args.log_topk),
-                    },
-                )
+                decision_start = {
+                    "type": "decision_start",
+                    "step": step_idx,
+                    "player": int(player),
+                    "name": name,
+                    "use_mcts": bool(use_mcts),
+                    "state": int(getattr(env, "state", -1)),
+                    "cur_tile": getattr(env, "curTile", None),
+                    "wall_remaining": _remaining_wall_tiles(env),
+                    "hand": list(env.hands[player]),
+                }
+                if args.log_compact:
+                    valid_actions = np.flatnonzero(obs[name]["action_mask"] > 0)
+                    decision_start["valid_actions"] = valid_actions.tolist()
+                    decision_start["valid_count"] = int(valid_actions.size)
+                else:
+                    decision_start["action_mask"] = _serialize_array(obs[name]["action_mask"], args.log_topk)
+                _log_event(log_fp, decision_start)
                 if args.log_obs:
                     oracle_obs = mcts.build_oracle_obs(env, player, obs[name]["observation"], in_channels)
                     _log_event(
@@ -551,6 +640,11 @@ def main():
                         step=step_idx,
                         log_topk=args.log_topk,
                         log_obs=args.log_obs,
+                        log_compact=args.log_compact,
+                        tree_path=args.tree_path,
+                        tree_depth=args.tree_depth,
+                        tree_max_children=args.tree_max_children,
+                        tree_min_visits=args.tree_min_visits,
                         log_fp=log_fp,
                     )
                 else:

@@ -463,6 +463,18 @@ def spawn_self_play(
             ]
             if sp_cfg.get("debug_log_obs"):
                 cmd.append("--debug_log_obs")
+            if sp_cfg.get("debug_log_compact") is False:
+                cmd.append("--debug_log_full")
+            debug_tree_path = sp_cfg.get("debug_tree_path")
+            if debug_tree_path:
+                debug_tree_path = debug_tree_path.format(iter_id=iter_id, worker_id=worker_id)
+                cmd += ["--debug_tree_path", debug_tree_path]
+            if sp_cfg.get("debug_tree_depth") is not None:
+                cmd += ["--debug_tree_depth", str(sp_cfg.get("debug_tree_depth"))]
+            if sp_cfg.get("debug_tree_max_children") is not None:
+                cmd += ["--debug_tree_max_children", str(sp_cfg.get("debug_tree_max_children"))]
+            if sp_cfg.get("debug_tree_min_visits") is not None:
+                cmd += ["--debug_tree_min_visits", str(sp_cfg.get("debug_tree_min_visits"))]
         if sp_cfg["determinize"]:
             cmd.append("--determinize")
         if sp_cfg.get("mcts_player_rotate"):
